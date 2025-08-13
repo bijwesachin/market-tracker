@@ -12,9 +12,9 @@
 
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Inline tweaks for fancy widget borders + toggle switches -->
+  <!-- Inline tweaks: widget border, toggle placement, and hide Details links -->
   <style>
-    /* Fancy gradient border for widgets (non-intrusive, sits atop your existing styles) */
+    /* Fancy gradient border for widgets */
     .widget {
       position: relative;
       border-radius: 14px;
@@ -30,47 +30,28 @@
       pointer-events: none;
     }
 
-    /* Toggle switch: visual layer over the same checkbox inputs your JS uses */
-    .toggle {
-      display: inline-flex; align-items: center; gap: 10px;
-      font-size: .95rem; color: #e6e6e6;
-    }
-    .switch {
-      position: relative; display: inline-block; width: 46px; height: 26px;
-    }
-    .switch input {
-      appearance: none; -webkit-appearance: none; width: 0; height: 0; opacity: 0;
-      position: absolute;
-    }
+    /* Place toggles on the right */
+    .widget-header { display:flex; align-items:center; gap:12px; justify-content:flex-start; flex-wrap:wrap; }
+    .widget-header .controls { display:inline-flex; align-items:center; gap:12px; margin-left:auto; }
+
+    /* Toggle switch visuals (on top of checkbox inputs used by your JS) */
+    .toggle { display:inline-flex; align-items:center; gap:10px; font-size:.95rem; color:#e6e6e6; }
+    .switch { position:relative; display:inline-block; width:46px; height:26px; }
+    .switch input { appearance:none; -webkit-appearance:none; width:0; height:0; opacity:0; position:absolute; }
     .slider {
-      position: absolute; inset: 0; cursor: pointer;
-      background: #2a2f3a; border: 1px solid #374151; border-radius: 999px;
-      transition: background .2s ease, border-color .2s ease;
+      position:absolute; inset:0; cursor:pointer; background:#2a2f3a; border:1px solid #374151; border-radius:999px;
+      transition:background .2s ease, border-color .2s ease;
     }
     .slider::before {
-      content: ""; position: absolute; height: 20px; width: 20px; left: 3px; top: 2.5px;
-      background: #f2f3f5; border-radius: 50%; transition: transform .2s ease;
-      box-shadow: 0 1px 2px rgba(0,0,0,.35);
+      content:""; position:absolute; height:20px; width:20px; left:3px; top:2.5px;
+      background:#f2f3f5; border-radius:50%; transition:transform .2s ease; box-shadow:0 1px 2px rgba(0,0,0,.35);
     }
-    /* Checked state */
-    .switch input:checked + .slider {
-      background: #3b82f6; border-color: #3b82f6;
-    }
-    .switch input:checked + .slider::before {
-      transform: translateX(20px);
-    }
-    .switch-label {
-      opacity: .95;
-    }
+    .switch input:checked + .slider { background:#3b82f6; border-color:#3b82f6; }
+    .switch input:checked + .slider::before { transform:translateX(20px); }
+    .switch-label { opacity:.95; }
 
-    /* Widget headers spacing */
-    .widget-header {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px;
-      flex-wrap: wrap;
-    }
-    .widget-header .controls {
-      display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    }
+    /* Hide Details links globally but keep them in DOM for script.js compatibility */
+    .event-link { display:none !important; }
   </style>
 </head>
 <body>
@@ -85,15 +66,15 @@
     <!-- 1) Economic data -->
     <section class="widget">
       <div class="widget-header">
-        <h2>Upcoming Economic Events</h2>
+        <h2>Economic Events</h2>
         <div class="controls">
-          <!-- Toggle: show next week (days 7–13). Default OFF = show only this week (0–6). -->
+          <!-- Toggle: Next Week (days 7–13). Default OFF = show only this week (0–6). -->
           <label class="toggle" for="toggleNextWeek">
             <span class="switch">
               <input id="toggleNextWeek" type="checkbox" />
               <span class="slider"></span>
             </span>
-            <span class="switch-label">Show Next Week (days 7–13)</span>
+            <span class="switch-label">Next Week</span>
           </label>
         </div>
       </div>
@@ -104,6 +85,7 @@
     <section class="widget">
       <div class="widget-header">
         <h2>Monthly OPEX & VIX Settlement</h2>
+        <div class="controls"><!-- (no toggle here) --></div>
       </div>
       <ul id="specials" class="event-list"></ul>
     </section>
@@ -111,7 +93,7 @@
     <!-- 3) Earnings & Sales -->
     <section class="widget">
       <div class="widget-header">
-        <h2>Upcoming Earnings & Sales</h2>
+        <h2>Earnings & Sales</h2>
         <div class="controls">
           <!-- Toggle: earnings 3-day filter (default ON). Uncheck to show all upcoming. -->
           <label class="toggle" for="toggleEarnings3d">
@@ -134,6 +116,7 @@
       <div class="event-meta">
         <div class="event-label"></div>
         <div class="event-type"></div>
+        <!-- Details link intentionally hidden via CSS -->
         <a class="event-link" target="_blank" rel="noopener noreferrer">Details</a>
       </div>
     </li>
