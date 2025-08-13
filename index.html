@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Market Tracker — Dashboard</title>
+  <title>Sachin’s Market Pulse</title>
 
   <!-- iPhone “Add to Home Screen” -->
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
   <!-- Your main theme -->
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Inline enhancements: gradient borders, toggle switches, hide legacy links -->
+  <!-- Inline enhancements: gradient borders, toggle switches, hide legacy links, legend pills -->
   <style>
     .widget{position:relative;border-radius:14px;overflow:hidden}
     .widget::before{
@@ -35,14 +35,28 @@
     .switch-label{opacity:.95}
     /* Hide "Details" anchors if any exist in old templates */
     .event-link{display:none !important}
+
+    /* Legend pills (match highlight colors) */
+    .legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:999px;font-size:.8rem;font-weight:600;
+      border:1px solid rgba(0,0,0,.08)
+    }
+    .pill.today{background:#d7ffd9;color:#0c3a11;border-color:#b7e5bb}
+    .pill.tomorrow{background:#ffe9cc;color:#4a2b00;border-color:#ffd2a1}
+    .pill .dot{width:8px;height:8px;border-radius:50%}
+    .pill.today .dot{background:#0c3a11}
+    .pill.tomorrow .dot{background:#4a2b00}
   </style>
 </head>
 <body>
-  <header class="app-header">
-    <h1>Market Tracker — Dashboard</h1>
-    <small class="note">
-      Today = light green • Tomorrow = light orange • Past events are greyed out
-    </small>
+  <header class="app-header" style="display:flex;align-items:center;gap:16px;justify-content:space-between;flex-wrap:wrap">
+    <h1 style="margin:0">Sachin’s Market Pulse</h1>
+    <div class="legend" aria-label="Legend">
+      <span class="pill today"><span class="dot" aria-hidden="true"></span>Today</span>
+      <span class="pill tomorrow"><span class="dot" aria-hidden="true"></span>Tomorrow</span>
+    </div>
   </header>
 
   <main class="grid" aria-live="polite">
