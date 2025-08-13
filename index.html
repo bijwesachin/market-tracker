@@ -1,112 +1,301 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Market Tracker — Dashboard</title>
+// ===== Paths =====
+const EARNINGS_JSON = 'earnings.json';
+const ECON_JSON = 'econ.json';
 
-  <!-- iPhone “Add to Home Screen” -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="icon.png">
+// ===== Ranges =====
+const ECON_WEEK_1 = [0, 6];     // current week
+const ECON_WEEK_2 = [7, 13];    // next week
+const EARNINGS_WEEK_1 = [0, 6]; // current week
+const EARNINGS_WEEK_2 = [7, 13];// next week
+const SPECIALS_WINDOW = 14;     // OPEX/VIX next 14 days
 
-  <!-- Your main theme -->
-  <link rel="stylesheet" href="styles.css" />
+// ===== Date helpers =====
+const MS_DAY = 86400000;
+const SoD = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const today = () => SoD(new Date());
+const parseISO = (iso) => SoD(new Date((iso || '') + 'T00:00:00'));
+const fmtDate = (iso) => {
+  const d = parseISO(iso);
+  if (isNaN(d)) return String(iso || '');
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+};
+const diffDays = (from, to) => Math.round((SoD(to) - SoD(from)) / MS_DAY);
+const isToday = (iso) => diffDays(today(), parseISO(iso)) === 0;
+const isTomorrow = (iso) => diffDays(today(), parseISO(iso)) === 1;
+const iso = (d) => d.toISOString().slice(0, 10);
 
-  <!-- Inline enhancements: gradient borders, toggle switches, hide legacy links -->
-  <style>
-    .widget{position:relative;border-radius:14px;overflow:hidden}
-    .widget::before{
-      content:"";position:absolute;inset:0;padding:1px;border-radius:inherit;
-      background:linear-gradient(135deg, rgba(255,140,0,.7), rgba(120,180,255,.35));
-      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-      -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none
-    }
-    .widget-header{display:flex;align-items:center;gap:12px;justify-content:flex-start;flex-wrap:wrap}
-    .widget-header .controls{display:inline-flex;align-items:center;gap:12px;margin-left:auto}
-    /* Toggle switch visuals */
-    .toggle {display:inline-flex;align-items:center;gap:10px;font-size:.95rem;color:#e6e6e6}
-    .switch {position:relative;display:inline-block;width:46px;height:26px}
-    .switch input{appearance:none;-webkit-appearance:none;width:0;height:0;opacity:0;position:absolute}
-    .slider{position:absolute;inset:0;cursor:pointer;background:#2a2f3a;border:1px solid #374151;border-radius:999px;transition:background .2s,border-color .2s}
-    .slider::before{content:"";position:absolute;height:20px;width:20px;left:3px;top:2.5px;background:#f2f3f5;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.35)}
-    .switch input:checked + .slider{background:#3b82f6;border-color:#3b82f6}
-    .switch input:checked + .slider::before{transform:translateX(20px)}
-    .switch-label{opacity:.95}
-    /* Hide "Details" anchors if any exist in old templates */
-    .event-link{display:none !important}
-  </style>
-</head>
-<body>
-  <header class="app-header">
-    <h1>Market Tracker — Dashboard</h1>
-    <small class="note">
-      Today = light green • Tomorrow = light orange • Past events are greyed out
-    </small>
-  </header>
+// ===== Time helpers (12-hour CT + inference for BMO/AMC & am/pm) =====
+function fmtTime12CT(timeStr) {
+  if (!timeStr) return '';
+  // Accept "HH:MM" (24h) or "am"/"pm"
+  if (/^(am|pm)$/i.test(timeStr)) {
+    // Use placeholders so AM/PM icon is correct
+    const isAM = /^am$/i.test(timeStr);
+    const h = isAM ? 9 : 16; // 9:00 AM vs 4:00 PM
+    const mm = '00';
+    const h12 = h % 12 || 12;
+    const period = isAM ? 'AM' : 'PM';
+    return `${h12}:${mm} ${period} CT`;
+  }
+  const m = String(timeStr).match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return '';
+  let h = parseInt(m[1], 10); const mm = m[2];
+  const period = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${mm} ${period} CT`;
+}
 
-  <main class="grid" aria-live="polite">
-    <!-- 1) Economic Events -->
-    <section class="widget" aria-label="Economic Events">
-      <div class="widget-header">
-        <h2>Economic Events</h2>
-        <div class="controls">
-          <label class="toggle" for="toggleNextWeek">
-            <span class="switch">
-              <input id="toggleNextWeek" type="checkbox" />
-              <span class="slider"></span>
-            </span>
-            <span class="switch-label">Next Week</span>
-          </label>
-        </div>
-      </div>
-      <ul id="econList" class="event-list"></ul>
-    </section>
+// Infer a sortable minute-of-day from time or keywords.
+// Returns { minutes: number|null, period: 'AM'|'PM'|'' }
+function inferTime(ev, context) {
+  const tsRaw = ev?.time && String(ev.time).trim();
+  // explicit "am"/"pm"
+  if (/^(am|pm)$/i.test(tsRaw || '')) {
+    return /^am$/i.test(tsRaw) ? { minutes: 9 * 60, period: 'AM' } : { minutes: 16 * 60, period: 'PM' };
+  }
+  // explicit "HH:MM"
+  if (tsRaw && /^\d{1,2}:\d{2}$/.test(tsRaw)) {
+    const [h, m] = tsRaw.split(':').map(Number);
+    return { minutes: h * 60 + m, period: h >= 12 ? 'PM' : 'AM' };
+  }
+  // earnings keywords (if you include in label/type)
+  const hay = `${ev?.label || ''} ${ev?.type || ''}`.toLowerCase();
+  if (context === 'earnings') {
+    if (/(bmo|before market|pre[-\s]?market|premarket)/.test(hay)) return { minutes: 9 * 60, period: 'AM' };
+    if (/(amc|after market|after hours|post[-\s]?market|postmarket)/.test(hay)) return { minutes: 16 * 60, period: 'PM' };
+  }
+  return { minutes: null, period: '' };
+}
 
-    <!-- 2) Monthly OPEX & VIX -->
-    <section class="widget" aria-label="Monthly OPEX & VIX Settlement">
-      <div class="widget-header">
-        <h2>Monthly OPEX & VIX Settlement</h2>
-        <div class="controls"></div>
-      </div>
-      <ul id="specials" class="event-list"></ul>
-    </section>
+// Compare by date asc, then time asc (missing time goes last)
+function compareByDateTime(a, b, context = '') {
+  const da = new Date(a.date), db = new Date(b.date);
+  if (da - db !== 0) return da - db;
+  const ta = inferTime(a, context).minutes;
+  const tb = inferTime(b, context).minutes;
+  if (ta != null && tb != null) return ta - tb;
+  if (ta != null && tb == null) return -1;
+  if (ta == null && tb != null) return 1;
+  return 0;
+}
 
-    <!-- 3) Earnings & Sales -->
-    <section class="widget" aria-label="Earnings & Sales">
-      <div class="widget-header">
-        <h2>Earnings & Sales</h2>
-        <div class="controls">
-          <label class="toggle" for="toggleEarningsWeek">
-            <span class="switch">
-              <input id="toggleEarningsWeek" type="checkbox" />
-              <span class="slider"></span>
-            </span>
-            <span class="switch-label">Next Week</span>
-          </label>
-        </div>
-      </div>
-      <div id="earningsBoard" class="board"></div>
-    </section>
-  </main>
+function periodFromEvent(ev, context) {
+  return inferTime(ev, context).period; // 'AM' | 'PM' | ''
+}
 
-  <!-- Templates the JS clones -->
-  <template id="eventItemTemplate">
-    <li class="event">
-      <div class="event-date"></div>
-      <div class="event-label"></div>
-      <div class="event-type"></div>
-      <!-- <a class="event-link" target="_blank" rel="noopener noreferrer">Details</a> -->
-    </li>
-  </template>
+// ===== DOM helpers =====
+function $(sel) { return document.querySelector(sel); }
 
-  <template id="tickerTemplate">
-    <section class="ticker">
-      <h3 class="ticker-title"></h3>
-      <ul class="event-list"></ul>
-    </section>
-  </template>
+function paintEvent(li, isoDate) {
+  if (!li) return;
+  const d = parseISO(isoDate);
+  const now = today();
+  if (isNaN(d)) return;
+  if (d < now) li.classList.add('past');
+  if (isToday(isoDate)) li.classList.add('today');
+  if (isTomorrow(isoDate)) li.classList.add('tomorrow');
+  li.dataset.dayoffset = diffDays(now, d);
+}
 
-  <script src="script.js"></script>
-</body>
-</html>
+async function getJSON(path, fallback = {}) {
+  try {
+    const res = await fetch(path, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`);
+    return await res.json();
+  } catch (e) {
+    console.warn(`getJSON fallback for ${path}:`, e?.message || e);
+    return fallback;
+  }
+}
+
+function tzAbbrevFromTZString(tzString) {
+  if (!tzString) return 'CT';
+  const s = String(tzString).toLowerCase();
+  if (s.includes('chicago') || s.includes('central')) return 'CT';
+  return 'CT';
+}
+
+// Add a row; for earnings we append ☀️/🌙 icon
+function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
+  const tplEl = $('#eventItemTemplate');
+  if (!listEl || !tplEl) return;
+  const frag = tplEl.content.cloneNode(true);
+  const li = frag.querySelector('.event');
+  const dEl = frag.querySelector('.event-date');
+  const lblEl = frag.querySelector('.event-label');
+  const typeEl = frag.querySelector('.event-type');
+
+  let dateLine = fmtDate(ev?.date);
+  const explicitTime = fmtTime12CT(ev?.time);
+  if (explicitTime) dateLine += ` · ${explicitTime}`;
+
+  if (context === 'earnings') {
+    const p = periodFromEvent(ev, 'earnings');
+    if (p === 'AM') dateLine += '  ☀️';
+    else if (p === 'PM') dateLine += '  🌙';
+  }
+
+  if (dEl) dEl.textContent = dateLine;
+  if (lblEl) lblEl.textContent = ev?.label || '';
+  if (typeEl) typeEl.textContent = ((ev?.type) || 'EVENT').toUpperCase();
+
+  paintEvent(li, ev?.date);
+  listEl.appendChild(frag);
+}
+
+// ===== Specials: OPEX & VIX =====
+function thirdFriday(year, monthIndex) {
+  const first = new Date(year, monthIndex, 1);
+  const firstFriOffset = (5 - first.getDay() + 7) % 7; // 5 = Fri
+  return new Date(year, monthIndex, 1 + firstFriOffset + 14);
+}
+function vixSettlementForMonth(year, monthIndex) {
+  const opexNextMonth = thirdFriday(year, monthIndex + 1);
+  const vro = new Date(opexNextMonth.getTime() - 30 * MS_DAY);
+  const WED = 3;
+  if (vro.getDay() !== WED) {
+    const delta = WED - vro.getDay();
+    vro.setDate(vro.getDate() + delta);
+  }
+  return vro;
+}
+function buildSpecials() {
+  const ul = $('#specials'); if (!ul) return;
+  ul.innerHTML = '';
+
+  const now = today(), y = now.getFullYear(), m = now.getMonth();
+  const candidates = [
+    thirdFriday(y, m), thirdFriday(y, m + 1),
+    vixSettlementForMonth(y, m), vixSettlementForMonth(y, m + 1),
+  ];
+
+  const seen = new Set();
+  candidates.forEach((d) => {
+    if (!(d instanceof Date) || isNaN(d)) return;
+    const dIso = iso(d);
+    const off = diffDays(now, d);
+    if (off < 0 || off > SPECIALS_WINDOW) return;
+
+    const isOpex = d.getTime() === thirdFriday(d.getFullYear(), d.getMonth()).getTime();
+    const type = isOpex ? 'MONTHLY OPEX' : 'VIX SETTLEMENT';
+    const key = type + '|' + dIso;
+    if (seen.has(key)) return; seen.add(key);
+
+    addEvent(ul, {
+      date: dIso,
+      label: isOpex ? 'Monthly OPEX (standard options expiration)' : 'VIX Settlement (VRO)',
+      type
+    }, 'CT', '');
+  });
+
+  if (!ul.children.length) {
+    const div = document.createElement('div'); div.style.opacity = '.7';
+    div.textContent = 'No OPEX or VIX settlement in the next 14 days.';
+    ul.appendChild(div);
+  }
+}
+
+// ===== Week filtering =====
+function inWeekRange(isoDate, baseRange, nextRange, showNextWeek) {
+  const d = parseISO(isoDate);
+  if (isNaN(d)) return false;
+  const off = diffDays(today(), d);
+  if (off < 0) return false;
+  if (off >= baseRange[0] && off <= baseRange[1]) return true;
+  if (showNextWeek && off >= nextRange[0] && off <= nextRange[1]) return true;
+  return false;
+}
+
+// ===== Economic Events =====
+function buildEcon(econ) {
+  const ul = $('#econList'); if (!ul) return;
+  ul.innerHTML = '';
+  const showNext = $('#toggleNextWeek')?.checked ?? false;
+  const tzLabel = tzAbbrevFromTZString(econ?.timezone || 'America/Chicago');
+
+  (econ?.events || [])
+    .filter(ev => inWeekRange(ev?.date, ECON_WEEK_1, ECON_WEEK_2, showNext))
+    .sort((a, b) => compareByDateTime(a, b, 'econ'))
+    .forEach(ev => addEvent(ul, ev, tzLabel, ''));
+
+  if (!ul.children.length) {
+    const div = document.createElement('div'); div.style.opacity = '.7';
+    div.textContent = showNext ? 'No events in this or next week.' : 'No events this week.';
+    ul.appendChild(div);
+  }
+}
+
+// ===== Earnings & Sales =====
+// Accepts FLAT ARRAY: [{ticker, date, time}]
+function normalizeEarningsFlat(data) {
+  if (!Array.isArray(data)) return [];
+  // group by ticker
+  const map = new Map();
+  data.forEach(row => {
+    if (!row || !row.ticker || !row.date) return;
+    const sym = String(row.ticker).toUpperCase().trim();
+    if (!map.has(sym)) map.set(sym, []);
+    map.get(sym).push({
+      date: row.date,
+      time: row.time || '',       // "am" | "pm" | "HH:MM" | ''
+      label: 'Earnings',          // simple label
+      type: 'EARNINGS'
+    });
+  });
+  return Array.from(map.entries()).map(([symbol, events]) => ({ symbol, events }));
+}
+
+function buildEarnings(earnRaw) {
+  const board = $('#earningsBoard'); if (!board) return;
+  board.innerHTML = '';
+  const showNext = $('#toggleEarningsWeek')?.checked ?? false;
+
+  const groups = normalizeEarningsFlat(earnRaw);
+  groups.forEach(t => {
+    const events = (t.events || [])
+      .filter(ev => inWeekRange(ev?.date, EARNINGS_WEEK_1, EARNINGS_WEEK_2, showNext))
+      .sort((a, b) => compareByDateTime(a, b, 'earnings'));
+    if (!events.length) return;
+
+    const tpl = $('#tickerTemplate'); if (!tpl) return;
+    const sect = tpl.content.cloneNode(true);
+    const title = sect.querySelector('.ticker-title');
+    if (title) title.textContent = (t.symbol || '').trim(); // SYMBOL ONLY
+
+    const ul = sect.querySelector('.event-list');
+    events.forEach(ev => addEvent(ul, ev, 'CT', 'earnings'));
+    board.appendChild(sect);
+  });
+
+  if (!board.children.length) {
+    const div = document.createElement('div'); div.style.opacity = '.7';
+    div.textContent = showNext ? 'No earnings/sales in this or next week.' : 'No earnings/sales this week.';
+    board.appendChild(div);
+  }
+}
+
+// ===== Render & Wire =====
+async function renderAll() {
+  const [econ, earnings] = await Promise.allSettled([
+    getJSON(ECON_JSON, { timezone: 'America/Chicago', events: [] }),
+    getJSON(EARNINGS_JSON, []) // FLAT ARRAY fallback
+  ]);
+  buildSpecials();
+  buildEcon(econ.status === 'fulfilled' ? econ.value : { timezone:'America/Chicago', events: [] });
+  buildEarnings(earnings.status === 'fulfilled' ? earnings.value : []);
+}
+
+function wire() {
+  $('#toggleNextWeek')?.addEventListener('change', renderAll);
+  $('#toggleEarningsWeek')?.addEventListener('change', renderAll);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    wire();
+    renderAll();
+  } catch (e) {
+    console.error('Init error:', e);
+    document.body.insertAdjacentHTML('afterbegin', `<div style="opacity:.7;padding:8px">Error initializing app.</div>`);
+  }
+});
