@@ -13,52 +13,52 @@ const SPECIALS_WINDOW = 14;     // OPEX/VIX next 14 days
 const MS_DAY = 86400000;
 const SoD = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 const today = () => SoD(new Date());
-const parseISO = (iso) => SoD(new Date((iso || '') + 'T00:00:00'));
-const fmtDate = (iso) => {
-  const d = parseISO(iso);
-  if (isNaN(d)) return String(iso || '');
-  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+const parseISO = (isoStr) => SoD(new Date((isoStr || '') + 'T00:00:00'));
+const fmtDate = (isoStr) => {
+  const d = parseISO(isoStr);
+  if (isNaN(d)) return String(isoStr || '');
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+  });
 };
 const diffDays = (from, to) => Math.round((SoD(to) - SoD(from)) / MS_DAY);
-const isToday = (iso) => diffDays(today(), parseISO(iso)) === 0;
-const isTomorrow = (iso) => diffDays(today(), parseISO(iso)) === 1;
+const isToday = (isoStr) => diffDays(today(), parseISO(isoStr)) === 0;
+const isTomorrow = (isoStr) => diffDays(today(), parseISO(isoStr)) === 1;
 const iso = (d) => d.toISOString().slice(0, 10);
 
-// ===== Time helpers (12-hour CT + inference for BMO/AMC & am/pm) =====
+// ===== Time helpers (12-hour CT + inference for AM/PM/BMO/AMC) =====
 function fmtTime12CT(timeStr) {
   if (!timeStr) return '';
-  // Accept "HH:MM" (24h) or "am"/"pm"
+  // Accept "am"/"pm"
   if (/^(am|pm)$/i.test(timeStr)) {
-    // Use placeholders so AM/PM icon is correct
     const isAM = /^am$/i.test(timeStr);
-    const h = isAM ? 9 : 16; // 9:00 AM vs 4:00 PM
+    const h24 = isAM ? 9 : 16; // placeholder: 9:00 AM CT vs 4:00 PM CT
+    const h12 = h24 % 12 || 12;
     const mm = '00';
-    const h12 = h % 12 || 12;
-    const period = isAM ? 'AM' : 'PM';
-    return `${h12}:${mm} ${period} CT`;
+    return `${h12}:${mm} ${isAM ? 'AM' : 'PM'} CT`;
   }
+  // Accept "HH:MM" (24h)
   const m = String(timeStr).match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return '';
-  let h = parseInt(m[1], 10); const mm = m[2];
+  let h = parseInt(m[1], 10), mm = m[2];
   const period = h >= 12 ? 'PM' : 'AM';
   h = h % 12; if (h === 0) h = 12;
   return `${h}:${mm} ${period} CT`;
 }
 
-// Infer a sortable minute-of-day from time or keywords.
-// Returns { minutes: number|null, period: 'AM'|'PM'|'' }
 function inferTime(ev, context) {
-  const tsRaw = ev?.time && String(ev.time).trim();
-  // explicit "am"/"pm"
-  if (/^(am|pm)$/i.test(tsRaw || '')) {
-    return /^am$/i.test(tsRaw) ? { minutes: 9 * 60, period: 'AM' } : { minutes: 16 * 60, period: 'PM' };
+  const t = ev?.time && String(ev.time).trim();
+
+  // explicit am/pm
+  if (/^(am|pm)$/i.test(t || '')) {
+    return /^am$/i.test(t) ? { minutes: 9 * 60, period: 'AM' } : { minutes: 16 * 60, period: 'PM' };
   }
-  // explicit "HH:MM"
-  if (tsRaw && /^\d{1,2}:\d{2}$/.test(tsRaw)) {
-    const [h, m] = tsRaw.split(':').map(Number);
+  // explicit HH:MM
+  if (t && /^\d{1,2}:\d{2}$/.test(t)) {
+    const [h, m] = t.split(':').map(Number);
     return { minutes: h * 60 + m, period: h >= 12 ? 'PM' : 'AM' };
   }
-  // earnings keywords (if you include in label/type)
+  // keyword inference for earnings
   const hay = `${ev?.label || ''} ${ev?.type || ''}`.toLowerCase();
   if (context === 'earnings') {
     if (/(bmo|before market|pre[-\s]?market|premarket)/.test(hay)) return { minutes: 9 * 60, period: 'AM' };
@@ -67,7 +67,7 @@ function inferTime(ev, context) {
   return { minutes: null, period: '' };
 }
 
-// Compare by date asc, then time asc (missing time goes last)
+// sort by date, then by time (missing time last)
 function compareByDateTime(a, b, context = '') {
   const da = new Date(a.date), db = new Date(b.date);
   if (da - db !== 0) return da - db;
@@ -79,17 +79,14 @@ function compareByDateTime(a, b, context = '') {
   return 0;
 }
 
-function periodFromEvent(ev, context) {
-  return inferTime(ev, context).period; // 'AM' | 'PM' | ''
-}
+function periodFromEvent(ev, context) { return inferTime(ev, context).period; }
 
 // ===== DOM helpers =====
-function $(sel) { return document.querySelector(sel); }
+const $ = (sel) => document.querySelector(sel);
 
 function paintEvent(li, isoDate) {
   if (!li) return;
-  const d = parseISO(isoDate);
-  const now = today();
+  const d = parseISO(isoDate), now = today();
   if (isNaN(d)) return;
   if (d < now) li.classList.add('past');
   if (isToday(isoDate)) li.classList.add('today');
@@ -115,7 +112,8 @@ function tzAbbrevFromTZString(tzString) {
   return 'CT';
 }
 
-// Add a row; for earnings we append ☀️/🌙 icon
+// Add a row to a list using the template.
+// For earnings: NO label text; keep EARNINGS pill and icon.
 function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   const tplEl = $('#eventItemTemplate');
   if (!listEl || !tplEl) return;
@@ -126,9 +124,10 @@ function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   const typeEl = frag.querySelector('.event-type');
 
   let dateLine = fmtDate(ev?.date);
-  const explicitTime = fmtTime12CT(ev?.time);
-  if (explicitTime) dateLine += ` · ${explicitTime}`;
+  const timeLabel = fmtTime12CT(ev?.time);
+  if (timeLabel) dateLine += ` · ${timeLabel}`;
 
+  // AM/PM icons for earnings
   if (context === 'earnings') {
     const p = periodFromEvent(ev, 'earnings');
     if (p === 'AM') dateLine += '  ☀️';
@@ -136,7 +135,17 @@ function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   }
 
   if (dEl) dEl.textContent = dateLine;
-  if (lblEl) lblEl.textContent = ev?.label || '';
+
+  // Only set label text for NON-earnings events
+  if (lblEl) {
+    if (context === 'earnings') {
+      lblEl.textContent = ''; // <— remove "Earnings" word
+    } else {
+      lblEl.textContent = ev?.label || '';
+    }
+  }
+
+  // Keep the type pill; for earnings we show "EARNINGS"
   if (typeEl) typeEl.textContent = ((ev?.type) || 'EVENT').toUpperCase();
 
   paintEvent(li, ev?.date);
@@ -150,6 +159,7 @@ function thirdFriday(year, monthIndex) {
   return new Date(year, monthIndex, 1 + firstFriOffset + 14);
 }
 function vixSettlementForMonth(year, monthIndex) {
+  // VIX settlement: Wednesday ~30 days before next month's OPEX
   const opexNextMonth = thirdFriday(year, monthIndex + 1);
   const vro = new Date(opexNextMonth.getTime() - 30 * MS_DAY);
   const WED = 3;
@@ -162,24 +172,20 @@ function vixSettlementForMonth(year, monthIndex) {
 function buildSpecials() {
   const ul = $('#specials'); if (!ul) return;
   ul.innerHTML = '';
-
   const now = today(), y = now.getFullYear(), m = now.getMonth();
   const candidates = [
     thirdFriday(y, m), thirdFriday(y, m + 1),
     vixSettlementForMonth(y, m), vixSettlementForMonth(y, m + 1),
   ];
-
   const seen = new Set();
   candidates.forEach((d) => {
     if (!(d instanceof Date) || isNaN(d)) return;
-    const dIso = iso(d);
-    const off = diffDays(now, d);
+    const dIso = iso(d), off = diffDays(now, d);
     if (off < 0 || off > SPECIALS_WINDOW) return;
 
     const isOpex = d.getTime() === thirdFriday(d.getFullYear(), d.getMonth()).getTime();
     const type = isOpex ? 'MONTHLY OPEX' : 'VIX SETTLEMENT';
-    const key = type + '|' + dIso;
-    if (seen.has(key)) return; seen.add(key);
+    const key = type + '|' + dIso; if (seen.has(key)) return; seen.add(key);
 
     addEvent(ul, {
       date: dIso,
@@ -187,7 +193,6 @@ function buildSpecials() {
       type
     }, 'CT', '');
   });
-
   if (!ul.children.length) {
     const div = document.createElement('div'); div.style.opacity = '.7';
     div.textContent = 'No OPEX or VIX settlement in the next 14 days.';
@@ -225,20 +230,18 @@ function buildEcon(econ) {
   }
 }
 
-// ===== Earnings & Sales =====
-// Accepts FLAT ARRAY: [{ticker, date, time}]
-function normalizeEarningsFlat(data) {
-  if (!Array.isArray(data)) return [];
-  // group by ticker
-  const map = new Map();
-  data.forEach(row => {
-    if (!row || !row.ticker || !row.date) return;
-    const sym = String(row.ticker).toUpperCase().trim();
+// ===== Earnings (flat earnings.json) =====
+function normalizeEarningsFlat(rows) {
+  if (!Array.isArray(rows)) return [];
+  const map = new Map(); // symbol -> events[]
+  rows.forEach(r => {
+    if (!r || !r.ticker || !r.date) return;
+    const sym = String(r.ticker).toUpperCase().trim();
     if (!map.has(sym)) map.set(sym, []);
     map.get(sym).push({
-      date: row.date,
-      time: row.time || '',       // "am" | "pm" | "HH:MM" | ''
-      label: 'Earnings',          // simple label
+      date: r.date,
+      time: r.time || '', // "am" | "pm" | "HH:MM" | ''
+      label: '',          // <— no "Earnings" label text inside the card
       type: 'EARNINGS'
     });
   });
@@ -260,7 +263,7 @@ function buildEarnings(earnRaw) {
     const tpl = $('#tickerTemplate'); if (!tpl) return;
     const sect = tpl.content.cloneNode(true);
     const title = sect.querySelector('.ticker-title');
-    if (title) title.textContent = (t.symbol || '').trim(); // SYMBOL ONLY
+    if (title) title.textContent = (t.symbol || '').trim(); // SYMBOL ONLY in header
 
     const ul = sect.querySelector('.event-list');
     events.forEach(ev => addEvent(ul, ev, 'CT', 'earnings'));
