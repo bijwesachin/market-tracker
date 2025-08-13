@@ -3,8 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Market Tracker — Widgets</title>
+  <title>Market Tracker — Dashboard</title>
+
+  <!-- iPhone “Add to Home Screen” -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon.png">
+
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Inline tweaks for fancy widget borders + toggle switches -->
+  <style>
+    /* Fancy gradient border for widgets (non-intrusive, sits atop your existing styles) */
+    .widget {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .widget::before {
+      content: "";
+      position: absolute; inset: 0;
+      padding: 1px; border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255,140,0,.7), rgba(120,180,255,.35));
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* Toggle switch: visual layer over the same checkbox inputs your JS uses */
+    .toggle {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: .95rem; color: #e6e6e6;
+    }
+    .switch {
+      position: relative; display: inline-block; width: 46px; height: 26px;
+    }
+    .switch input {
+      appearance: none; -webkit-appearance: none; width: 0; height: 0; opacity: 0;
+      position: absolute;
+    }
+    .slider {
+      position: absolute; inset: 0; cursor: pointer;
+      background: #2a2f3a; border: 1px solid #374151; border-radius: 999px;
+      transition: background .2s ease, border-color .2s ease;
+    }
+    .slider::before {
+      content: ""; position: absolute; height: 20px; width: 20px; left: 3px; top: 2.5px;
+      background: #f2f3f5; border-radius: 50%; transition: transform .2s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,.35);
+    }
+    /* Checked state */
+    .switch input:checked + .slider {
+      background: #3b82f6; border-color: #3b82f6;
+    }
+    .switch input:checked + .slider::before {
+      transform: translateX(20px);
+    }
+    .switch-label {
+      opacity: .95;
+    }
+
+    /* Widget headers spacing */
+    .widget-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .widget-header .controls {
+      display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+  </style>
 </head>
 <body>
   <header class="app-header">
@@ -15,19 +82,25 @@
   </header>
 
   <main class="grid" aria-live="polite">
-    <!-- Earnings & Sales -->
+    <!-- 1) Economic data -->
     <section class="widget">
       <div class="widget-header">
-        <h2>Upcoming Earnings & Sales</h2>
-        <label class="toggle">
-          <input id="toggleEarnings3d" type="checkbox" checked />
-          <span>Show only next 3 days</span>
-        </label>
+        <h2>Upcoming Economic Events</h2>
+        <div class="controls">
+          <!-- Toggle: show next week (days 7–13). Default OFF = show only this week (0–6). -->
+          <label class="toggle" for="toggleNextWeek">
+            <span class="switch">
+              <input id="toggleNextWeek" type="checkbox" />
+              <span class="slider"></span>
+            </span>
+            <span class="switch-label">Show Next Week (days 7–13)</span>
+          </label>
+        </div>
       </div>
-      <div id="earningsBoard" class="board"></div>
+      <ul id="econList" class="event-list"></ul>
     </section>
 
-    <!-- OPEX & VIX -->
+    <!-- 2) OPEX & VIX settlements -->
     <section class="widget">
       <div class="widget-header">
         <h2>Monthly OPEX & VIX Settlement</h2>
@@ -35,16 +108,22 @@
       <ul id="specials" class="event-list"></ul>
     </section>
 
-    <!-- Economic Events -->
+    <!-- 3) Earnings & Sales -->
     <section class="widget">
       <div class="widget-header">
-        <h2>Upcoming Economic Events</h2>
-        <label class="toggle">
-          <input id="toggleNextWeek" type="checkbox" />
-          <span>Show Next Week (days 7–13)</span>
-        </label>
+        <h2>Upcoming Earnings & Sales</h2>
+        <div class="controls">
+          <!-- Toggle: earnings 3-day filter (default ON). Uncheck to show all upcoming. -->
+          <label class="toggle" for="toggleEarnings3d">
+            <span class="switch">
+              <input id="toggleEarnings3d" type="checkbox" checked />
+              <span class="slider"></span>
+            </span>
+            <span class="switch-label">Show only next 3 days</span>
+          </label>
+        </div>
       </div>
-      <ul id="econList" class="event-list"></ul>
+      <div id="earningsBoard" class="board"></div>
     </section>
   </main>
 
