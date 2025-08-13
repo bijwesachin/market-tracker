@@ -24,39 +24,56 @@ const isToday = (iso) => diffDays(today(), parseISO(iso)) === 0;
 const isTomorrow = (iso) => diffDays(today(), parseISO(iso)) === 1;
 const iso = (d) => d.toISOString().slice(0, 10);
 
-// ===== Time helpers (12-hour CT) =====
+// ===== Time helpers (12-hour CT + inference for BMO/AMC) =====
 function fmtTime12CT(timeStr) {
-  // Accepts "HH:MM" or "H:MM" (24h). Returns "h:MM AM CT" / "h:MM PM CT".
   if (!timeStr) return '';
   const m = String(timeStr).match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return ''; // unknown format
+  if (!m) return '';
   let h = parseInt(m[1], 10); const mm = m[2];
   const period = h >= 12 ? 'PM' : 'AM';
   h = h % 12; if (h === 0) h = 12;
   return `${h}:${mm} ${period} CT`;
 }
-function periodFromTime(timeStr) {
-  // Returns 'AM' | 'PM' | '' (if unknown)
-  const m = String(timeStr || '').match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return '';
-  const h = parseInt(m[1], 10);
-  return h >= 12 ? 'PM' : 'AM';
+
+// Infer a sortable minute-of-day from time or label keywords.
+// Returns { minutes: number|null, period: 'AM'|'PM'|'' }
+function inferTime(ev, context) {
+  // Priority 1: explicit time "HH:MM" (24h)
+  const ts = ev?.time && String(ev.time).trim();
+  if (ts && /^\d{1,2}:\d{2}$/.test(ts)) {
+    const [h, m] = ts.split(':').map(Number);
+    const minutes = h * 60 + m;
+    return { minutes, period: h >= 12 ? 'PM' : 'AM' };
+  }
+  // Priority 2: keywords in label/type (BMO/AMC etc.) for earnings
+  const hay = `${ev?.label || ''} ${ev?.type || ''}`.toLowerCase();
+  if (context === 'earnings') {
+    if (/(bmo|before market|pre[-\s]?market|premarket)/.test(hay)) {
+      return { minutes: 9 * 60, period: 'AM' }; // 9:00 AM placeholder
+    }
+    if (/(amc|after market|after hours|post[-\s]?market|postmarket)/.test(hay)) {
+      return { minutes: 16 * 60, period: 'PM' }; // 4:00 PM placeholder
+    }
+  }
+  // Unknown
+  return { minutes: null, period: '' };
 }
-function compareByDateTime(a, b) {
-  // Sort by date asc, then by time asc (missing time goes last)
+
+// Compare by date asc, then time asc (missing time goes last)
+function compareByDateTime(a, b, context = '') {
   const da = new Date(a.date), db = new Date(b.date);
   if (da - db !== 0) return da - db;
-  const ta = (a.time && /^\d{1,2}:\d{2}$/.test(a.time)) ? a.time : null;
-  const tb = (b.time && /^\d{1,2}:\d{2}$/.test(b.time)) ? b.time : null;
-  if (ta && tb) {
-    // Compare HH:MM as numbers
-    const [ha, ma] = ta.split(':').map(Number);
-    const [hb, mb] = tb.split(':').map(Number);
-    return ha !== hb ? ha - hb : ma - mb;
-  }
-  if (ta && !tb) return -1;
-  if (!ta && tb) return 1;
+  const ta = inferTime(a, context).minutes;
+  const tb = inferTime(b, context).minutes;
+  if (ta != null && tb != null) return ta - tb;
+  if (ta != null && tb == null) return -1;
+  if (ta == null && tb != null) return 1;
   return 0;
+}
+
+function periodFromEvent(ev, context) {
+  const t = inferTime(ev, context);
+  return t.period; // 'AM' | 'PM' | ''
 }
 
 // ===== DOM helpers =====
@@ -80,11 +97,10 @@ async function getJSON(path, fallback = {}) {
     return await res.json();
   } catch (e) {
     console.warn(`getJSON fallback for ${path}:`, e?.message || e);
-    return fallback; // never crash on missing JSON
+    return fallback;
   }
 }
 
-// ---- Format a CT label from econ.json timezone (optional helper)
 function tzAbbrevFromTZString(tzString) {
   if (!tzString) return 'CT';
   const s = String(tzString).toLowerCase();
@@ -92,8 +108,7 @@ function tzAbbrevFromTZString(tzString) {
   return 'CT';
 }
 
-// Add an event row to a list; shows time (12h CT) if provided.
-// If context === 'earnings', append ☀️/🌙 icon based on AM/PM.
+// Add a row; for earnings we append ☀️/🌙 icon
 function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   const tplEl = $('#eventItemTemplate');
   if (!listEl || !tplEl) return;
@@ -103,13 +118,12 @@ function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   const lblEl = frag.querySelector('.event-label');
   const typeEl = frag.querySelector('.event-type');
 
-  const dateStr = fmtDate(ev?.date);
-  const timeLabel = fmtTime12CT(ev?.time);
-  let dateLine = dateStr + (timeLabel ? ` · ${timeLabel}` : '');
+  let dateLine = fmtDate(ev?.date);
+  const explicitTime = fmtTime12CT(ev?.time);
+  if (explicitTime) dateLine += ` · ${explicitTime}`;
 
-  // Earnings: add AM/PM icon if time is provided
   if (context === 'earnings') {
-    const p = periodFromTime(ev?.time);
+    const p = periodFromEvent(ev, 'earnings');
     if (p === 'AM') dateLine += '  ☀️';
     else if (p === 'PM') dateLine += '  🌙';
   }
@@ -129,7 +143,6 @@ function thirdFriday(year, monthIndex) {
   return new Date(year, monthIndex, 1 + firstFriOffset + 14);
 }
 function vixSettlementForMonth(year, monthIndex) {
-  // VIX settlement (VRO): Wednesday 30 days before next month's OPEX
   const opexNextMonth = thirdFriday(year, monthIndex + 1);
   const vro = new Date(opexNextMonth.getTime() - 30 * MS_DAY);
   const WED = 3;
@@ -195,7 +208,7 @@ function buildEcon(econ) {
 
   (econ?.events || [])
     .filter(ev => inWeekRange(ev?.date, ECON_WEEK_1, ECON_WEEK_2, showNext))
-    .sort(compareByDateTime)
+    .sort((a, b) => compareByDateTime(a, b, 'econ'))
     .forEach(ev => addEvent(ul, ev, tzLabel, ''));
 
   if (!ul.children.length) {
@@ -207,9 +220,6 @@ function buildEcon(econ) {
 
 // ===== Earnings & Sales =====
 function normalizeEarningsList(data) {
-  // Supports both formats:
-  // 1) { "tickers": [ {symbol, name, events:[...]}, ... ] }
-  // 2) { "AAPL": [ ... ], "MSFT": [ ... ] }
   if (Array.isArray(data?.tickers)) return data.tickers;
   if (data && typeof data === 'object') {
     return Object.keys(data).map(sym => ({ symbol: sym, name: '', events: data[sym] }));
@@ -225,7 +235,7 @@ function buildEarnings(earn) {
   list.forEach(t => {
     const events = (t?.events || [])
       .filter(ev => inWeekRange(ev?.date, EARNINGS_WEEK_1, EARNINGS_WEEK_2, showNext))
-      .sort(compareByDateTime);
+      .sort((a, b) => compareByDateTime(a, b, 'earnings'));
     if (!events.length) return;
 
     const tpl = $('#tickerTemplate'); if (!tpl) return;
