@@ -24,6 +24,41 @@ const isToday = (iso) => diffDays(today(), parseISO(iso)) === 0;
 const isTomorrow = (iso) => diffDays(today(), parseISO(iso)) === 1;
 const iso = (d) => d.toISOString().slice(0, 10);
 
+// ===== Time helpers (12-hour CT) =====
+function fmtTime12CT(timeStr) {
+  // Accepts "HH:MM" or "H:MM" (24h). Returns "h:MM AM CT" / "h:MM PM CT".
+  if (!timeStr) return '';
+  const m = String(timeStr).match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return ''; // unknown format
+  let h = parseInt(m[1], 10); const mm = m[2];
+  const period = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${mm} ${period} CT`;
+}
+function periodFromTime(timeStr) {
+  // Returns 'AM' | 'PM' | '' (if unknown)
+  const m = String(timeStr || '').match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return '';
+  const h = parseInt(m[1], 10);
+  return h >= 12 ? 'PM' : 'AM';
+}
+function compareByDateTime(a, b) {
+  // Sort by date asc, then by time asc (missing time goes last)
+  const da = new Date(a.date), db = new Date(b.date);
+  if (da - db !== 0) return da - db;
+  const ta = (a.time && /^\d{1,2}:\d{2}$/.test(a.time)) ? a.time : null;
+  const tb = (b.time && /^\d{1,2}:\d{2}$/.test(b.time)) ? b.time : null;
+  if (ta && tb) {
+    // Compare HH:MM as numbers
+    const [ha, ma] = ta.split(':').map(Number);
+    const [hb, mb] = tb.split(':').map(Number);
+    return ha !== hb ? ha - hb : ma - mb;
+  }
+  if (ta && !tb) return -1;
+  if (!ta && tb) return 1;
+  return 0;
+}
+
 // ===== DOM helpers =====
 function $(sel) { return document.querySelector(sel); }
 
@@ -54,14 +89,14 @@ function tzAbbrevFromTZString(tzString) {
   if (!tzString) return 'CT';
   const s = String(tzString).toLowerCase();
   if (s.includes('chicago') || s.includes('central')) return 'CT';
-  // Fallback: last segment or generic abbreviation
   return 'CT';
 }
 
-// Add an event row to a list; shows "time CT" if provided
-function addEvent(listEl, ev, tzLabel = 'CT') {
+// Add an event row to a list; shows time (12h CT) if provided.
+// If context === 'earnings', append ☀️/🌙 icon based on AM/PM.
+function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   const tplEl = $('#eventItemTemplate');
-  if (!listEl || !tplEl) return;                   // guard for missing template/target
+  if (!listEl || !tplEl) return;
   const frag = tplEl.content.cloneNode(true);
   const li = frag.querySelector('.event');
   const dEl = frag.querySelector('.event-date');
@@ -69,8 +104,17 @@ function addEvent(listEl, ev, tzLabel = 'CT') {
   const typeEl = frag.querySelector('.event-type');
 
   const dateStr = fmtDate(ev?.date);
-  const timeStr = (ev?.time && String(ev.time).trim()) ? ` · ${ev.time} ${tzLabel}` : '';
-  if (dEl) dEl.textContent = `${dateStr}${timeStr}`;
+  const timeLabel = fmtTime12CT(ev?.time);
+  let dateLine = dateStr + (timeLabel ? ` · ${timeLabel}` : '');
+
+  // Earnings: add AM/PM icon if time is provided
+  if (context === 'earnings') {
+    const p = periodFromTime(ev?.time);
+    if (p === 'AM') dateLine += '  ☀️';
+    else if (p === 'PM') dateLine += '  🌙';
+  }
+
+  if (dEl) dEl.textContent = dateLine;
   if (lblEl) lblEl.textContent = ev?.label || '';
   if (typeEl) typeEl.textContent = ((ev?.type) || 'EVENT').toUpperCase();
 
@@ -121,7 +165,7 @@ function buildSpecials() {
       date: dIso,
       label: isOpex ? 'Monthly OPEX (standard options expiration)' : 'VIX Settlement (VRO)',
       type
-    }, 'CT'); // we show CT by default
+    }, 'CT', '');
   });
 
   if (!ul.children.length) {
@@ -151,8 +195,8 @@ function buildEcon(econ) {
 
   (econ?.events || [])
     .filter(ev => inWeekRange(ev?.date, ECON_WEEK_1, ECON_WEEK_2, showNext))
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .forEach(ev => addEvent(ul, ev, tzLabel));
+    .sort(compareByDateTime)
+    .forEach(ev => addEvent(ul, ev, tzLabel, ''));
 
   if (!ul.children.length) {
     const div = document.createElement('div'); div.style.opacity = '.7';
@@ -181,15 +225,16 @@ function buildEarnings(earn) {
   list.forEach(t => {
     const events = (t?.events || [])
       .filter(ev => inWeekRange(ev?.date, EARNINGS_WEEK_1, EARNINGS_WEEK_2, showNext))
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      .sort(compareByDateTime);
     if (!events.length) return;
 
     const tpl = $('#tickerTemplate'); if (!tpl) return;
     const sect = tpl.content.cloneNode(true);
     const title = sect.querySelector('.ticker-title');
-    if (title) title.textContent = `${t.symbol || ''} — ${t.name || ''}`.trim();
+    if (title) title.textContent = (t.symbol || '').trim(); // SYMBOL ONLY
+
     const ul = sect.querySelector('.event-list');
-    events.forEach(ev => addEvent(ul, ev, '')); // earnings typically have time on calls; we keep blank unless you add time
+    events.forEach(ev => addEvent(ul, ev, 'CT', 'earnings'));
     board.appendChild(sect);
   });
 
