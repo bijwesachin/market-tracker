@@ -12,14 +12,14 @@
 
   <link rel="stylesheet" href="styles.css" />
 
-  <!-- Inline tweaks: widget border, toggle placement, hide Details links -->
+  <!-- Visual tweaks: gradient borders, right-aligned toggles, hide Details links -->
   <style>
     .widget{position:relative;border-radius:14px;overflow:hidden}
     .widget::before{
       content:"";position:absolute;inset:0;padding:1px;border-radius:inherit;
       background:linear-gradient(135deg,rgba(255,140,0,.7),rgba(120,180,255,.35));
       -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-      -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
+      -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none
     }
     .widget-header{display:flex;align-items:center;gap:12px;justify-content:flex-start;flex-wrap:wrap}
     .widget-header .controls{display:inline-flex;align-items:center;gap:12px;margin-left:auto}
@@ -74,7 +74,6 @@
       <div class="widget-header">
         <h2>Earnings & Sales</h2>
         <div class="controls">
-          <!-- NEW behavior: current week by default; toggle adds next week -->
           <label class="toggle" for="toggleEarningsWeek">
             <span class="switch">
               <input id="toggleEarningsWeek" type="checkbox" />
