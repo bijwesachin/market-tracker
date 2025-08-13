@@ -1,14 +1,12 @@
 {
   "timezone": "America/Chicago",
   "events": [
-    /* ---------- AUGUST 2025 ---------- */
     { "date": "2025-08-14", "time": "07:30", "label": "Initial Jobless Claims (week ending Aug 9)", "type": "JOBLESS CLAIMS" },
     { "date": "2025-08-14", "time": "07:30", "label": "PPI (July 2025)", "type": "PPI" },
     { "date": "2025-08-15", "time": "09:00", "label": "Michigan Consumer Sentiment (Prelim) — August", "type": "MICHIGAN SENTIMENT (PREL)" },
     { "date": "2025-08-20", "time": "13:00", "label": "FOMC Minutes (Meeting of Jul 29–30)", "type": "FOMC MINUTES" },
     { "date": "2025-08-29", "time": "07:30", "label": "Personal Income & Outlays (PCE) — July 2025", "type": "PCE" },
 
-    /* ---------- SEPTEMBER 2025 ---------- */
     { "date": "2025-09-05", "time": "07:30", "label": "Non-Farm Payrolls (August 2025)", "type": "NON-FARM PAYROLLS" },
     { "date": "2025-09-10", "time": "07:30", "label": "PPI (August 2025)", "type": "PPI" },
     { "date": "2025-09-11", "time": "07:30", "label": "CPI (August 2025)", "type": "CPI" },
@@ -16,7 +14,6 @@
     { "date": "2025-09-17", "time": "13:00", "label": "Fed Interest Rate Decision — Sep 2025 Meeting", "type": "FED RATE DECISION" },
     { "date": "2025-09-26", "time": "07:30", "label": "Personal Income & Outlays (PCE) — August 2025", "type": "PCE" },
 
-    /* ---------- OCTOBER 2025 ---------- */
     { "date": "2025-10-03", "time": "07:30", "label": "Non-Farm Payrolls (September 2025)", "type": "NON-FARM PAYROLLS" },
     { "date": "2025-10-10", "time": "09:00", "label": "Michigan Consumer Sentiment (Prelim) — October", "type": "MICHIGAN SENTIMENT (PREL)" },
     { "date": "2025-10-15", "time": "07:30", "label": "CPI (September 2025)", "type": "CPI" },
@@ -25,7 +22,6 @@
     { "date": "2025-10-31", "time": "07:30", "label": "Personal Income & Outlays (PCE) — September 2025", "type": "PCE" },
     { "date": "2025-10-08", "time": "13:00", "label": "FOMC Minutes (Meeting of Sep 16–17) — expected", "type": "FOMC MINUTES" },
 
-    /* ---------- NOVEMBER 2025 ---------- */
     { "date": "2025-11-07", "time": "07:30", "label": "Non-Farm Payrolls (October 2025)", "type": "NON-FARM PAYROLLS" },
     { "date": "2025-11-07", "time": "09:00", "label": "Michigan Consumer Sentiment (Prelim) — November", "type": "MICHIGAN SENTIMENT (PREL)" },
     { "date": "2025-11-13", "time": "07:30", "label": "CPI (October 2025)", "type": "CPI" },
@@ -33,7 +29,6 @@
     { "date": "2025-11-19", "time": "13:00", "label": "FOMC Minutes (Meeting of Oct 28–29) — expected", "type": "FOMC MINUTES" },
     { "date": "2025-11-26", "time": "07:30", "label": "Personal Income & Outlays (PCE) — October 2025", "type": "PCE" },
 
-    /* ---------- DECEMBER 2025 ---------- */
     { "date": "2025-12-05", "time": "07:30", "label": "Non-Farm Payrolls (November 2025)", "type": "NON-FARM PAYROLLS" },
     { "date": "2025-12-05", "time": "09:00", "label": "Michigan Consumer Sentiment (Prelim) — December", "type": "MICHIGAN SENTIMENT (PREL)" },
     { "date": "2025-12-10", "time": "07:30", "label": "CPI (November 2025)", "type": "CPI" },
