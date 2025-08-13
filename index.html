@@ -1,137 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Market Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="icon.png" type="image/png">
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #1e1e1e;
-    color: #f5f5f5;
-    margin: 0;
-    padding: 10px;
-  }
-  h2 {
-    margin-top: 0;
-  }
-  .widget {
-    background: #2a2a2a;
-    border: 2px solid #ff8c00;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 15px;
-  }
-  .widget-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .toggle {
-    appearance: none;
-    width: 50px;
-    height: 24px;
-    background: #555;
-    border-radius: 12px;
-    position: relative;
-    cursor: pointer;
-  }
-  .toggle:checked {
-    background: #ff8c00;
-  }
-  .toggle::before {
-    content: "";
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    top: 2px;
-    left: 2px;
-    transition: transform 0.2s ease;
-  }
-  .toggle:checked::before {
-    transform: translateX(26px);
-  }
-  ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  .event {
-    padding: 6px 0;
-    border-bottom: 1px solid #444;
-  }
-  .event-date {
-    font-size: 0.9em;
-    color: #ccc;
-  }
-  .event-label {
-    font-weight: bold;
-  }
-  .today {
-    background-color: rgba(144, 238, 144, 0.3);
-  }
-  .tomorrow {
-    background-color: rgba(255, 165, 0, 0.3);
-  }
-  .ticker-title {
-    font-size: 1.2em;
-    font-weight: bold;
-    margin: 8px 0 4px;
-    color: #ffcc00;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Market Tracker — Dashboard</title>
+
+  <!-- iPhone “Add to Home Screen” -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <!-- Your main theme -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Inline enhancements: gradient borders, toggle switches, hide legacy links -->
+  <style>
+    .widget{position:relative;border-radius:14px;overflow:hidden}
+    .widget::before{
+      content:"";position:absolute;inset:0;padding:1px;border-radius:inherit;
+      background:linear-gradient(135deg, rgba(255,140,0,.7), rgba(120,180,255,.35));
+      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none
+    }
+    .widget-header{display:flex;align-items:center;gap:12px;justify-content:flex-start;flex-wrap:wrap}
+    .widget-header .controls{display:inline-flex;align-items:center;gap:12px;margin-left:auto}
+    /* Toggle switch visuals */
+    .toggle {display:inline-flex;align-items:center;gap:10px;font-size:.95rem;color:#e6e6e6}
+    .switch {position:relative;display:inline-block;width:46px;height:26px}
+    .switch input{appearance:none;-webkit-appearance:none;width:0;height:0;opacity:0;position:absolute}
+    .slider{position:absolute;inset:0;cursor:pointer;background:#2a2f3a;border:1px solid #374151;border-radius:999px;transition:background .2s,border-color .2s}
+    .slider::before{content:"";position:absolute;height:20px;width:20px;left:3px;top:2.5px;background:#f2f3f5;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+    .switch input:checked + .slider{background:#3b82f6;border-color:#3b82f6}
+    .switch input:checked + .slider::before{transform:translateX(20px)}
+    .switch-label{opacity:.95}
+    /* Hide "Details" anchors if any exist in old templates */
+    .event-link{display:none !important}
+  </style>
 </head>
 <body>
+  <header class="app-header">
+    <h1>Market Tracker — Dashboard</h1>
+    <small class="note">
+      Today = light green • Tomorrow = light orange • Past events are greyed out
+    </small>
+  </header>
 
-<!-- ECONOMIC DATA -->
-<div class="widget">
-  <div class="widget-header">
-    <h2>Economic Data</h2>
-    <label>
-      <input type="checkbox" id="toggleNextWeek" class="toggle">
-    </label>
-  </div>
-  <ul id="econList"></ul>
-</div>
+  <main class="grid" aria-live="polite">
+    <!-- 1) Economic Events -->
+    <section class="widget" aria-label="Economic Events">
+      <div class="widget-header">
+        <h2>Economic Events</h2>
+        <div class="controls">
+          <label class="toggle" for="toggleNextWeek">
+            <span class="switch">
+              <input id="toggleNextWeek" type="checkbox" />
+              <span class="slider"></span>
+            </span>
+            <span class="switch-label">Next Week</span>
+          </label>
+        </div>
+      </div>
+      <ul id="econList" class="event-list"></ul>
+    </section>
 
-<!-- MONTHLY OPEX & VIX -->
-<div class="widget">
-  <div class="widget-header">
-    <h2>Monthly OPEX & VIX</h2>
-  </div>
-  <ul id="specials"></ul>
-</div>
+    <!-- 2) Monthly OPEX & VIX -->
+    <section class="widget" aria-label="Monthly OPEX & VIX Settlement">
+      <div class="widget-header">
+        <h2>Monthly OPEX & VIX Settlement</h2>
+        <div class="controls"></div>
+      </div>
+      <ul id="specials" class="event-list"></ul>
+    </section>
 
-<!-- EARNINGS -->
-<div class="widget">
-  <div class="widget-header">
-    <h2>Earnings</h2>
-    <label>
-      <input type="checkbox" id="toggleEarningsWeek" class="toggle">
-    </label>
-  </div>
-  <div id="earningsBoard"></div>
-</div>
+    <!-- 3) Earnings & Sales -->
+    <section class="widget" aria-label="Earnings & Sales">
+      <div class="widget-header">
+        <h2>Earnings & Sales</h2>
+        <div class="controls">
+          <label class="toggle" for="toggleEarningsWeek">
+            <span class="switch">
+              <input id="toggleEarningsWeek" type="checkbox" />
+              <span class="slider"></span>
+            </span>
+            <span class="switch-label">Next Week</span>
+          </label>
+        </div>
+      </div>
+      <div id="earningsBoard" class="board"></div>
+    </section>
+  </main>
 
-<!-- Templates -->
-<template id="eventItemTemplate">
-  <li class="event">
-    <div class="event-date"></div>
-    <div class="event-label"></div>
-    <div class="event-type"></div>
-  </li>
-</template>
+  <!-- Templates the JS clones -->
+  <template id="eventItemTemplate">
+    <li class="event">
+      <div class="event-date"></div>
+      <div class="event-label"></div>
+      <div class="event-type"></div>
+      <!-- <a class="event-link" target="_blank" rel="noopener noreferrer">Details</a> -->
+    </li>
+  </template>
 
-<template id="tickerTemplate">
-  <div>
-    <div class="ticker-title"></div>
-    <ul class="event-list"></ul>
-  </div>
-</template>
+  <template id="tickerTemplate">
+    <section class="ticker">
+      <h3 class="ticker-title"></h3>
+      <ul class="event-list"></ul>
+    </section>
+  </template>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
