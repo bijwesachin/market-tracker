@@ -24,9 +24,19 @@ const isToday = (iso) => diffDays(today(), parseISO(iso)) === 0;
 const isTomorrow = (iso) => diffDays(today(), parseISO(iso)) === 1;
 const iso = (d) => d.toISOString().slice(0, 10);
 
-// ===== Time helpers (12-hour CT + inference for BMO/AMC) =====
+// ===== Time helpers (12-hour CT + inference for BMO/AMC & am/pm) =====
 function fmtTime12CT(timeStr) {
   if (!timeStr) return '';
+  // Accept "HH:MM" (24h) or "am"/"pm"
+  if (/^(am|pm)$/i.test(timeStr)) {
+    // Use placeholders so AM/PM icon is correct
+    const isAM = /^am$/i.test(timeStr);
+    const h = isAM ? 9 : 16; // 9:00 AM vs 4:00 PM
+    const mm = '00';
+    const h12 = h % 12 || 12;
+    const period = isAM ? 'AM' : 'PM';
+    return `${h12}:${mm} ${period} CT`;
+  }
   const m = String(timeStr).match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return '';
   let h = parseInt(m[1], 10); const mm = m[2];
@@ -35,27 +45,25 @@ function fmtTime12CT(timeStr) {
   return `${h}:${mm} ${period} CT`;
 }
 
-// Infer a sortable minute-of-day from time or label keywords.
+// Infer a sortable minute-of-day from time or keywords.
 // Returns { minutes: number|null, period: 'AM'|'PM'|'' }
 function inferTime(ev, context) {
-  // Priority 1: explicit time "HH:MM" (24h)
-  const ts = ev?.time && String(ev.time).trim();
-  if (ts && /^\d{1,2}:\d{2}$/.test(ts)) {
-    const [h, m] = ts.split(':').map(Number);
-    const minutes = h * 60 + m;
-    return { minutes, period: h >= 12 ? 'PM' : 'AM' };
+  const tsRaw = ev?.time && String(ev.time).trim();
+  // explicit "am"/"pm"
+  if (/^(am|pm)$/i.test(tsRaw || '')) {
+    return /^am$/i.test(tsRaw) ? { minutes: 9 * 60, period: 'AM' } : { minutes: 16 * 60, period: 'PM' };
   }
-  // Priority 2: keywords in label/type (BMO/AMC etc.) for earnings
+  // explicit "HH:MM"
+  if (tsRaw && /^\d{1,2}:\d{2}$/.test(tsRaw)) {
+    const [h, m] = tsRaw.split(':').map(Number);
+    return { minutes: h * 60 + m, period: h >= 12 ? 'PM' : 'AM' };
+  }
+  // earnings keywords (if you include in label/type)
   const hay = `${ev?.label || ''} ${ev?.type || ''}`.toLowerCase();
   if (context === 'earnings') {
-    if (/(bmo|before market|pre[-\s]?market|premarket)/.test(hay)) {
-      return { minutes: 9 * 60, period: 'AM' }; // 9:00 AM placeholder
-    }
-    if (/(amc|after market|after hours|post[-\s]?market|postmarket)/.test(hay)) {
-      return { minutes: 16 * 60, period: 'PM' }; // 4:00 PM placeholder
-    }
+    if (/(bmo|before market|pre[-\s]?market|premarket)/.test(hay)) return { minutes: 9 * 60, period: 'AM' };
+    if (/(amc|after market|after hours|post[-\s]?market|postmarket)/.test(hay)) return { minutes: 16 * 60, period: 'PM' };
   }
-  // Unknown
   return { minutes: null, period: '' };
 }
 
@@ -72,8 +80,7 @@ function compareByDateTime(a, b, context = '') {
 }
 
 function periodFromEvent(ev, context) {
-  const t = inferTime(ev, context);
-  return t.period; // 'AM' | 'PM' | ''
+  return inferTime(ev, context).period; // 'AM' | 'PM' | ''
 }
 
 // ===== DOM helpers =====
@@ -219,21 +226,33 @@ function buildEcon(econ) {
 }
 
 // ===== Earnings & Sales =====
-function normalizeEarningsList(data) {
-  if (Array.isArray(data?.tickers)) return data.tickers;
-  if (data && typeof data === 'object') {
-    return Object.keys(data).map(sym => ({ symbol: sym, name: '', events: data[sym] }));
-  }
-  return [];
+// Accepts FLAT ARRAY: [{ticker, date, time}]
+function normalizeEarningsFlat(data) {
+  if (!Array.isArray(data)) return [];
+  // group by ticker
+  const map = new Map();
+  data.forEach(row => {
+    if (!row || !row.ticker || !row.date) return;
+    const sym = String(row.ticker).toUpperCase().trim();
+    if (!map.has(sym)) map.set(sym, []);
+    map.get(sym).push({
+      date: row.date,
+      time: row.time || '',       // "am" | "pm" | "HH:MM" | ''
+      label: 'Earnings',          // simple label
+      type: 'EARNINGS'
+    });
+  });
+  return Array.from(map.entries()).map(([symbol, events]) => ({ symbol, events }));
 }
-function buildEarnings(earn) {
+
+function buildEarnings(earnRaw) {
   const board = $('#earningsBoard'); if (!board) return;
   board.innerHTML = '';
   const showNext = $('#toggleEarningsWeek')?.checked ?? false;
 
-  const list = normalizeEarningsList(earn);
-  list.forEach(t => {
-    const events = (t?.events || [])
+  const groups = normalizeEarningsFlat(earnRaw);
+  groups.forEach(t => {
+    const events = (t.events || [])
       .filter(ev => inWeekRange(ev?.date, EARNINGS_WEEK_1, EARNINGS_WEEK_2, showNext))
       .sort((a, b) => compareByDateTime(a, b, 'earnings'));
     if (!events.length) return;
@@ -259,11 +278,11 @@ function buildEarnings(earn) {
 async function renderAll() {
   const [econ, earnings] = await Promise.allSettled([
     getJSON(ECON_JSON, { timezone: 'America/Chicago', events: [] }),
-    getJSON(EARNINGS_JSON, { tickers: [] })
+    getJSON(EARNINGS_JSON, []) // FLAT ARRAY fallback
   ]);
   buildSpecials();
-  if (econ.status === 'fulfilled') buildEcon(econ.value); else buildEcon({ timezone:'America/Chicago', events: [] });
-  if (earnings.status === 'fulfilled') buildEarnings(earnings.value); else buildEarnings({ tickers: [] });
+  buildEcon(econ.status === 'fulfilled' ? econ.value : { timezone:'America/Chicago', events: [] });
+  buildEarnings(earnings.status === 'fulfilled' ? earnings.value : []);
 }
 
 function wire() {
