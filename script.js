@@ -26,6 +26,7 @@ const iso = (d) => d.toISOString().slice(0, 10);
 
 // ===== DOM helpers =====
 function $(sel) { return document.querySelector(sel); }
+
 function paintEvent(li, isoDate) {
   if (!li) return;
   const d = parseISO(isoDate);
@@ -48,20 +49,32 @@ async function getJSON(path, fallback = {}) {
   }
 }
 
-function addEvent(listEl, ev) {
+// ---- Format a CT label from econ.json timezone (optional helper)
+function tzAbbrevFromTZString(tzString) {
+  if (!tzString) return 'CT';
+  const s = String(tzString).toLowerCase();
+  if (s.includes('chicago') || s.includes('central')) return 'CT';
+  // Fallback: last segment or generic abbreviation
+  return 'CT';
+}
+
+// Add an event row to a list; shows "time CT" if provided
+function addEvent(listEl, ev, tzLabel = 'CT') {
   const tplEl = $('#eventItemTemplate');
   if (!listEl || !tplEl) return;                   // guard for missing template/target
   const frag = tplEl.content.cloneNode(true);
   const li = frag.querySelector('.event');
-  const d = frag.querySelector('.event-date');
-  const lbl = frag.querySelector('.event-label');
-  const typ = frag.querySelector('.event-type');
+  const dEl = frag.querySelector('.event-date');
+  const lblEl = frag.querySelector('.event-label');
+  const typeEl = frag.querySelector('.event-type');
 
-  if (d) d.textContent = fmtDate(ev.date);
-  if (lbl) lbl.textContent = ev.label || '';
-  if (typ) typ.textContent = (ev.type || 'EVENT').toUpperCase();
+  const dateStr = fmtDate(ev?.date);
+  const timeStr = (ev?.time && String(ev.time).trim()) ? ` · ${ev.time} ${tzLabel}` : '';
+  if (dEl) dEl.textContent = `${dateStr}${timeStr}`;
+  if (lblEl) lblEl.textContent = ev?.label || '';
+  if (typeEl) typeEl.textContent = ((ev?.type) || 'EVENT').toUpperCase();
 
-  paintEvent(li, ev.date);
+  paintEvent(li, ev?.date);
   listEl.appendChild(frag);
 }
 
@@ -72,6 +85,7 @@ function thirdFriday(year, monthIndex) {
   return new Date(year, monthIndex, 1 + firstFriOffset + 14);
 }
 function vixSettlementForMonth(year, monthIndex) {
+  // VIX settlement (VRO): Wednesday 30 days before next month's OPEX
   const opexNextMonth = thirdFriday(year, monthIndex + 1);
   const vro = new Date(opexNextMonth.getTime() - 30 * MS_DAY);
   const WED = 3;
@@ -107,7 +121,7 @@ function buildSpecials() {
       date: dIso,
       label: isOpex ? 'Monthly OPEX (standard options expiration)' : 'VIX Settlement (VRO)',
       type
-    });
+    }, 'CT'); // we show CT by default
   });
 
   if (!ul.children.length) {
@@ -133,11 +147,12 @@ function buildEcon(econ) {
   const ul = $('#econList'); if (!ul) return;
   ul.innerHTML = '';
   const showNext = $('#toggleNextWeek')?.checked ?? false;
+  const tzLabel = tzAbbrevFromTZString(econ?.timezone || 'America/Chicago');
 
   (econ?.events || [])
     .filter(ev => inWeekRange(ev?.date, ECON_WEEK_1, ECON_WEEK_2, showNext))
     .sort((a, b) => new Date(a.date) - new Date(b.date))
-    .forEach(ev => addEvent(ul, ev));
+    .forEach(ev => addEvent(ul, ev, tzLabel));
 
   if (!ul.children.length) {
     const div = document.createElement('div'); div.style.opacity = '.7';
@@ -148,6 +163,9 @@ function buildEcon(econ) {
 
 // ===== Earnings & Sales =====
 function normalizeEarningsList(data) {
+  // Supports both formats:
+  // 1) { "tickers": [ {symbol, name, events:[...]}, ... ] }
+  // 2) { "AAPL": [ ... ], "MSFT": [ ... ] }
   if (Array.isArray(data?.tickers)) return data.tickers;
   if (data && typeof data === 'object') {
     return Object.keys(data).map(sym => ({ symbol: sym, name: '', events: data[sym] }));
@@ -171,7 +189,7 @@ function buildEarnings(earn) {
     const title = sect.querySelector('.ticker-title');
     if (title) title.textContent = `${t.symbol || ''} — ${t.name || ''}`.trim();
     const ul = sect.querySelector('.event-list');
-    events.forEach(ev => addEvent(ul, ev));
+    events.forEach(ev => addEvent(ul, ev, '')); // earnings typically have time on calls; we keep blank unless you add time
     board.appendChild(sect);
   });
 
@@ -185,11 +203,11 @@ function buildEarnings(earn) {
 // ===== Render & Wire =====
 async function renderAll() {
   const [econ, earnings] = await Promise.allSettled([
-    getJSON(ECON_JSON, { events: [] }),
+    getJSON(ECON_JSON, { timezone: 'America/Chicago', events: [] }),
     getJSON(EARNINGS_JSON, { tickers: [] })
   ]);
   buildSpecials();
-  if (econ.status === 'fulfilled') buildEcon(econ.value); else buildEcon({ events: [] });
+  if (econ.status === 'fulfilled') buildEcon(econ.value); else buildEcon({ timezone:'America/Chicago', events: [] });
   if (earnings.status === 'fulfilled') buildEarnings(earnings.value); else buildEarnings({ tickers: [] });
 }
 
