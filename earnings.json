@@ -1,0 +1,386 @@
+{
+  "tickers": [
+    {
+      "symbol": "TSLA",
+      "name": "Tesla, Inc.",
+      "events": [
+        {
+          "date": "2025-01-02",
+          "label": "Q4 2024 Production & Deliveries",
+          "type": "sales",
+          "url": "https://ir.tesla.com/"
+        },
+        {
+          "date": "2025-04-02",
+          "label": "Q1 2025 Production & Deliveries",
+          "type": "sales",
+          "url": "https://ir.tesla.com/"
+        },
+        {
+          "date": "2025-07-02",
+          "label": "Q2 2025 Production & Deliveries",
+          "type": "sales",
+          "url": "https://ir.tesla.com/"
+        },
+        {
+          "date": "2025-10-02",
+          "label": "Q3 2025 Production & Deliveries (estimated)",
+          "type": "sales",
+          "url": "https://ir.tesla.com/"
+        },
+        {
+          "date": "2025-01-29",
+          "label": "Q4 2024 & FY 2024 Results",
+          "type": "earnings",
+          "url": "https://ir.tesla.com/"
+        },
+        {
+          "date": "2025-04-22",
+          "label": "Q1 2025 Results",
+          "type": "earnings",
+          "url": "https://ir.tesla.com/"
+        },
+        {
+          "date": "2025-07-23",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://ir.tesla.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "AAPL",
+      "name": "Apple Inc.",
+      "events": [
+        {
+          "date": "2025-01-30",
+          "label": "Fiscal Q1 2025 Results",
+          "type": "earnings",
+          "url": "https://investor.apple.com/"
+        },
+        {
+          "date": "2025-05-01",
+          "label": "Fiscal Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://investor.apple.com/"
+        },
+        {
+          "date": "2025-07-31",
+          "label": "Fiscal Q3 2025 Results",
+          "type": "earnings",
+          "url": "https://investor.apple.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "HOOD",
+      "name": "Robinhood Markets, Inc.",
+      "events": [
+        {
+          "date": "2025-07-30",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://investors.robinhood.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "NVDA",
+      "name": "NVIDIA Corporation",
+      "events": [
+        {
+          "date": "2025-05-28",
+          "label": "Q1 FY26 Results",
+          "type": "earnings",
+          "url": "https://investor.nvidia.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "PLTR",
+      "name": "Palantir Technologies Inc.",
+      "events": [
+        {
+          "date": "2025-08-04",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://investors.palantir.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "AMD",
+      "name": "Advanced Micro Devices, Inc.",
+      "events": [
+        {
+          "date": "2025-05-06",
+          "label": "Q1 2025 Results",
+          "type": "earnings",
+          "url": "https://ir.amd.com/"
+        },
+        {
+          "date": "2025-08-05",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://ir.amd.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "GOOG",
+      "name": "Alphabet Inc. (Class C)",
+      "events": [
+        {
+          "date": "2025-04-25",
+          "label": "Q1 2025 Results",
+          "type": "earnings",
+          "url": "https://abc.xyz/investor/"
+        },
+        {
+          "date": "2025-07-23",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://abc.xyz/investor/"
+        }
+      ]
+    },
+    {
+      "symbol": "TSM",
+      "name": "Taiwan Semiconductor Manufacturing Company",
+      "events": [
+        {
+          "date": "2025-07-17",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://investor.tsmc.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "AVGO",
+      "name": "Broadcom Inc.",
+      "events": [
+        {
+          "date": "2025-06-05",
+          "label": "Q2 FY25 Results",
+          "type": "earnings",
+          "url": "https://investors.broadcom.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "MSFT",
+      "name": "Microsoft Corporation",
+      "events": [
+        {
+          "date": "2025-01-29",
+          "label": "FY25 Q2 Results",
+          "type": "earnings",
+          "url": "https://www.microsoft.com/en-us/Investor/"
+        },
+        {
+          "date": "2025-04-30",
+          "label": "FY25 Q3 Results",
+          "type": "earnings",
+          "url": "https://www.microsoft.com/en-us/Investor/"
+        },
+        {
+          "date": "2025-07-30",
+          "label": "FY25 Q4 Results",
+          "type": "earnings",
+          "url": "https://www.microsoft.com/en-us/Investor/"
+        }
+      ]
+    },
+    {
+      "symbol": "ARM",
+      "name": "Arm Holdings plc",
+      "events": [
+        {
+          "date": "2025-05-07",
+          "label": "Q4 & FY2025 Results",
+          "type": "earnings",
+          "url": "https://investors.arm.com/"
+        },
+        {
+          "date": "2025-07-30",
+          "label": "Q1 FY2026 Results",
+          "type": "earnings",
+          "url": "https://investors.arm.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "AMZN",
+      "name": "Amazon.com, Inc.",
+      "events": [
+        {
+          "date": "2025-05-01",
+          "label": "Q1 2025 Results",
+          "type": "earnings",
+          "url": "https://ir.aboutamazon.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "SPXL",
+      "name": "Direxion Daily S&P 500 Bull 3X (ETF)",
+      "events": []
+    },
+    {
+      "symbol": "TQQQ",
+      "name": "ProShares UltraPro QQQ (ETF)",
+      "events": []
+    },
+    {
+      "symbol": "SMCI",
+      "name": "Super Micro Computer, Inc.",
+      "events": [
+        {
+          "date": "2025-08-05",
+          "label": "Q4 & FY2025 Results",
+          "type": "earnings",
+          "url": "https://ir.supermicro.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "COIN",
+      "name": "Coinbase Global, Inc.",
+      "events": [
+        {
+          "date": "2025-07-31",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://investor.coinbase.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "AI",
+      "name": "C3.ai, Inc.",
+      "events": [
+        {
+          "date": "2025-05-28",
+          "label": "Q4 FY25 & FY Results",
+          "type": "earnings",
+          "url": "https://ir.c3.ai/"
+        }
+      ]
+    },
+    {
+      "symbol": "WMT",
+      "name": "Walmart Inc.",
+      "events": [
+        {
+          "date": "2025-05-15",
+          "label": "Q1 FY26 Results",
+          "type": "earnings",
+          "url": "https://corporate.walmart.com/newsroom/financial-events"
+        },
+        {
+          "date": "2025-08-21",
+          "label": "Q2 FY26 Results (scheduled)",
+          "type": "earnings",
+          "url": "https://corporate.walmart.com/newsroom/financial-events"
+        }
+      ]
+    },
+    {
+      "symbol": "META",
+      "name": "Meta Platforms, Inc.",
+      "events": [
+        {
+          "date": "2025-04-30",
+          "label": "Q1 2025 Results",
+          "type": "earnings",
+          "url": "https://investor.fb.com/"
+        },
+        {
+          "date": "2025-07-30",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://investor.fb.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "NFLX",
+      "name": "Netflix, Inc.",
+      "events": [
+        {
+          "date": "2025-07-17",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://ir.netflix.net/"
+        }
+      ]
+    },
+    {
+      "symbol": "COST",
+      "name": "Costco Wholesale Corporation",
+      "events": [
+        {
+          "date": "2025-05-29",
+          "label": "Q3 FY25 Results",
+          "type": "earnings",
+          "url": "https://investor.costco.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "LOW",
+      "name": "Lowe's Companies, Inc.",
+      "events": [
+        {
+          "date": "2025-08-20",
+          "label": "Q2 2025 Results (estimated)",
+          "type": "earnings",
+          "url": "https://investor.lowes.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "TGT",
+      "name": "Target Corporation",
+      "events": [
+        {
+          "date": "2025-05-21",
+          "label": "Q1 2025 Results",
+          "type": "earnings",
+          "url": "https://investors.target.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "CSCO",
+      "name": "Cisco Systems, Inc.",
+      "events": [
+        {
+          "date": "2025-05-14",
+          "label": "Q3 FY25 Results",
+          "type": "earnings",
+          "url": "https://investor.cisco.com/"
+        },
+        {
+          "date": "2025-08-13",
+          "label": "Q4 FY25 Results (scheduled)",
+          "type": "earnings",
+          "url": "https://investor.cisco.com/"
+        }
+      ]
+    },
+    {
+      "symbol": "CRWV",
+      "name": "CoreWeave (placeholder)",
+      "events": [
+        {
+          "date": "2025-08-12",
+          "label": "Q2 2025 Results",
+          "type": "earnings",
+          "url": "https://coreweave.com/"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Market Tracker — Widgets</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Market Tracker — Dashboard</h1>
+    <small class="note">
+      Today = light green • Tomorrow = light orange • Past events are greyed out
+    </small>
+  </header>
+
+  <main class="grid" aria-live="polite">
+    <!-- Earnings & Sales -->
+    <section class="widget">
+      <div class="widget-header">
+        <h2>Upcoming Earnings & Sales</h2>
+        <label class="toggle">
+          <input id="toggleEarnings3d" type="checkbox" checked />
+          <span>Show only next 3 days</span>
+        </label>
+      </div>
+      <div id="earningsBoard" class="board"></div>
+    </section>
+
+    <!-- OPEX & VIX -->
+    <section class="widget">
+      <div class="widget-header">
+        <h2>Monthly OPEX & VIX Settlement</h2>
+      </div>
+      <ul id="specials" class="event-list"></ul>
+    </section>
+
+    <!-- Economic Events -->
+    <section class="widget">
+      <div class="widget-header">
+        <h2>Upcoming Economic Events</h2>
+        <label class="toggle">
+          <input id="toggleNextWeek" type="checkbox" />
+          <span>Show Next Week (days 7–13)</span>
+        </label>
+      </div>
+      <ul id="econList" class="event-list"></ul>
+    </section>
+  </main>
+
+  <!-- Templates (shared) -->
+  <template id="eventItemTemplate">
+    <li class="event" data-dayoffset="0">
+      <div class="event-date"></div>
+      <div class="event-meta">
+        <div class="event-label"></div>
+        <div class="event-type"></div>
+        <a class="event-link" target="_blank" rel="noopener noreferrer">Details</a>
+      </div>
+    </li>
+  </template>
+
+  <template id="tickerTemplate">
+    <section class="ticker">
+      <h3 class="ticker-title"></h3>
+      <ul class="event-list"></ul>
+    </section>
+  </template>
+
+  <script src="script.js"></script>
+</body>
+</html>

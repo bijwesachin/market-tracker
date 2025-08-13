@@ -1,0 +1,46 @@
+{
+  "events": [
+    {
+      "date": "2025-08-12",
+      "label": "CPI (July 2025)",
+      "type": "CPI",
+      "url": "https://www.bls.gov/cpi/"
+    },
+    {
+      "date": "2025-08-14",
+      "label": "Initial Jobless Claims (week ending Aug 9)",
+      "type": "JOBLESS CLAIMS",
+      "url": "https://oui.doleta.gov/unemploy/claims_arch.asp"
+    },
+    {
+      "date": "2025-08-14",
+      "label": "PPI (July 2025)",
+      "type": "PPI",
+      "url": "https://www.bls.gov/ppi/"
+    },
+    {
+      "date": "2025-08-21",
+      "label": "Jackson Hole Economic Policy Symposium (Day 1)",
+      "type": "POWELL / SPEECHES",
+      "url": "https://www.kansascityfed.org/research/jackson-hole-economic-symposium/"
+    },
+    {
+      "date": "2025-08-22",
+      "label": "Jackson Hole: Chair Powell remarks (expected)",
+      "type": "POWELL / SPEECHES",
+      "url": "https://www.kansascityfed.org/research/jackson-hole-economic-symposium/"
+    },
+    {
+      "date": "2025-08-29",
+      "label": "Personal Income & Outlays (PCE) \u2014 July 2025",
+      "type": "PCE",
+      "url": "https://www.bea.gov/news/schedule"
+    },
+    {
+      "date": "2025-09-05",
+      "label": "Employment Situation (August 2025)",
+      "type": "PAYROLLS/NFP",
+      "url": "https://www.bls.gov/schedule/news_release/empsit.htm"
+    }
+  ]
+}
