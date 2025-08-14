@@ -2,11 +2,11 @@
 const EARNINGS_JSON = 'earnings.json';
 const ECON_JSON = 'econ.json';
 
-// ===== Ranges =====
-const ECON_WEEK_1 = [0, 6];     // current week
-const ECON_WEEK_2 = [7, 13];    // next week
-const EARNINGS_WEEK_1 = [0, 6]; // current week
-const EARNINGS_WEEK_2 = [7, 13];// next week
+// ===== Ranges (kept for compatibility; no longer used for week calc) =====
+const ECON_WEEK_1 = [0, 6];     // legacy (unused for calendar week)
+const ECON_WEEK_2 = [7, 13];    // legacy (unused for calendar week)
+const EARNINGS_WEEK_1 = [0, 6]; // legacy (unused for calendar week)
+const EARNINGS_WEEK_2 = [7, 13];// legacy (unused for calendar week)
 const SPECIALS_WINDOW = 14;     // OPEX/VIX next 14 days
 
 // ===== Date helpers =====
@@ -25,6 +25,32 @@ const diffDays = (from, to) => Math.round((SoD(to) - SoD(from)) / MS_DAY);
 const isToday = (isoStr) => diffDays(today(), parseISO(isoStr)) === 0;
 const isTomorrow = (isoStr) => diffDays(today(), parseISO(isoStr)) === 1;
 const iso = (d) => d.toISOString().slice(0, 10);
+
+// === Calendar week helpers (Mon→Fri) ===
+function mondayOfWeek(refDate) {
+  const d = SoD(refDate);
+  const day = d.getDay();             // 0..6 (Sun..Sat)
+  const diffToMon = (day + 6) % 7;    // Mon->0, Tue->1, ..., Sun->6
+  return new Date(d.getTime() - diffToMon * MS_DAY);
+}
+function fridayOfWeek(monday) {
+  return new Date(monday.getTime() + 4 * MS_DAY);
+}
+function currentWeekRange() {
+  const mon = mondayOfWeek(new Date());
+  const fri = fridayOfWeek(mon);
+  return { start: mon, end: fri };
+}
+function nextWeekRange() {
+  const monThis = mondayOfWeek(new Date());
+  const monNext = new Date(monThis.getTime() + 7 * MS_DAY);
+  const friNext = fridayOfWeek(monNext);
+  return { start: monNext, end: friNext };
+}
+function dateInRange(d, start, end) {
+  const t = SoD(d).getTime();
+  return t >= SoD(start).getTime() && t <= SoD(end).getTime();
+}
 
 // ===== Time helpers (12-hour CT + inference for AM/PM/BMO/AMC) =====
 function fmtTime12CT(timeStr) {
@@ -139,7 +165,7 @@ function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   // Only set label text for NON-earnings events
   if (lblEl) {
     if (context === 'earnings') {
-      lblEl.textContent = ''; // <— remove "Earnings" word
+      lblEl.textContent = ''; // remove "Earnings" word
     } else {
       lblEl.textContent = ev?.label || '';
     }
@@ -152,7 +178,7 @@ function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   listEl.appendChild(frag);
 }
 
-// ===== Specials: OPEX & VIX =====
+// ===== Specials: OPEX & VIX (unchanged: next 14 days) =====
 function thirdFriday(year, monthIndex) {
   const first = new Date(year, monthIndex, 1);
   const firstFriOffset = (5 - first.getDay() + 7) % 7; // 5 = Fri
@@ -200,15 +226,18 @@ function buildSpecials() {
   }
 }
 
-// ===== Week filtering =====
-function inWeekRange(isoDate, baseRange, nextRange, showNextWeek) {
+// ===== Week filtering (REPLACED with calendar-week logic) =====
+function inWeekRange(isoDate /* legacy args ignored */, _baseRange, _nextRange, showNextWeek) {
   const d = parseISO(isoDate);
   if (isNaN(d)) return false;
-  const off = diffDays(today(), d);
-  if (off < 0) return false;
-  if (off >= baseRange[0] && off <= baseRange[1]) return true;
-  if (showNextWeek && off >= nextRange[0] && off <= nextRange[1]) return true;
-  return false;
+
+  const cur = currentWeekRange();
+  const nxt = nextWeekRange();
+
+  const inCur = dateInRange(d, cur.start, cur.end);
+  const inNxt = showNextWeek && dateInRange(d, nxt.start, nxt.end);
+
+  return inCur || inNxt;
 }
 
 // ===== Economic Events =====
@@ -241,7 +270,7 @@ function normalizeEarningsFlat(rows) {
     map.get(sym).push({
       date: r.date,
       time: r.time || '', // "am" | "pm" | "HH:MM" | ''
-      label: '',          // <— no "Earnings" label text inside the card
+      label: '',          // no "Earnings" label text inside the card
       type: 'EARNINGS'
     });
   });
