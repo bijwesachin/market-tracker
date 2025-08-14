@@ -17,9 +17,7 @@ const parseISO = (isoStr) => SoD(new Date((isoStr || '') + 'T00:00:00'));
 const fmtDate = (isoStr) => {
   const d = parseISO(isoStr);
   if (isNaN(d)) return String(isoStr || '');
-  return d.toLocaleDateString(undefined, {
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-  });
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 };
 const diffDays = (from, to) => Math.round((SoD(to) - SoD(from)) / MS_DAY);
 const isToday = (isoStr) => diffDays(today(), parseISO(isoStr)) === 0;
@@ -32,7 +30,7 @@ function fmtTime12CT(timeStr) {
   // Accept "am"/"pm"
   if (/^(am|pm)$/i.test(timeStr)) {
     const isAM = /^am$/i.test(timeStr);
-    const h24 = isAM ? 9 : 16; // placeholder: 9:00 AM CT vs 4:00 PM CT
+    const h24 = isAM ? 9 : 16; // 9:00 AM vs 4:00 PM
     const h12 = h24 % 12 || 12;
     const mm = '00';
     return `${h12}:${mm} ${isAM ? 'AM' : 'PM'} CT`;
@@ -48,7 +46,6 @@ function fmtTime12CT(timeStr) {
 
 function inferTime(ev, context) {
   const t = ev?.time && String(ev.time).trim();
-
   // explicit am/pm
   if (/^(am|pm)$/i.test(t || '')) {
     return /^am$/i.test(t) ? { minutes: 9 * 60, period: 'AM' } : { minutes: 16 * 60, period: 'PM' };
@@ -58,7 +55,7 @@ function inferTime(ev, context) {
     const [h, m] = t.split(':').map(Number);
     return { minutes: h * 60 + m, period: h >= 12 ? 'PM' : 'AM' };
   }
-  // keyword inference for earnings
+  // keyword inference for earnings (if you ever use label/type hints)
   const hay = `${ev?.label || ''} ${ev?.type || ''}`.toLowerCase();
   if (context === 'earnings') {
     if (/(bmo|before market|pre[-\s]?market|premarket)/.test(hay)) return { minutes: 9 * 60, period: 'AM' };
@@ -112,8 +109,8 @@ function tzAbbrevFromTZString(tzString) {
   return 'CT';
 }
 
-// Add a row to a list using the template.
-// For earnings: NO label text; keep EARNINGS pill and icon.
+// Add a row using the template.
+// For earnings: NO label text; keep EARNINGS pill and AM/PM icon.
 function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   const tplEl = $('#eventItemTemplate');
   if (!listEl || !tplEl) return;
@@ -127,7 +124,6 @@ function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   const timeLabel = fmtTime12CT(ev?.time);
   if (timeLabel) dateLine += ` · ${timeLabel}`;
 
-  // AM/PM icons for earnings
   if (context === 'earnings') {
     const p = periodFromEvent(ev, 'earnings');
     if (p === 'AM') dateLine += '  ☀️';
@@ -135,17 +131,9 @@ function addEvent(listEl, ev, tzLabel = 'CT', context = '') {
   }
 
   if (dEl) dEl.textContent = dateLine;
-
-  // Only set label text for NON-earnings events
   if (lblEl) {
-    if (context === 'earnings') {
-      lblEl.textContent = ''; // <— remove "Earnings" word
-    } else {
-      lblEl.textContent = ev?.label || '';
-    }
+    lblEl.textContent = (context === 'earnings') ? '' : (ev?.label || '');
   }
-
-  // Keep the type pill; for earnings we show "EARNINGS"
   if (typeEl) typeEl.textContent = ((ev?.type) || 'EVENT').toUpperCase();
 
   paintEvent(li, ev?.date);
@@ -241,7 +229,7 @@ function normalizeEarningsFlat(rows) {
     map.get(sym).push({
       date: r.date,
       time: r.time || '', // "am" | "pm" | "HH:MM" | ''
-      label: '',          // <— no "Earnings" label text inside the card
+      label: '',          // no label text inside card
       type: 'EARNINGS'
     });
   });
@@ -281,7 +269,7 @@ function buildEarnings(earnRaw) {
 async function renderAll() {
   const [econ, earnings] = await Promise.allSettled([
     getJSON(ECON_JSON, { timezone: 'America/Chicago', events: [] }),
-    getJSON(EARNINGS_JSON, []) // FLAT ARRAY fallback
+    getJSON(EARNINGS_JSON, []) // flat array fallback
   ]);
   buildSpecials();
   buildEcon(econ.status === 'fulfilled' ? econ.value : { timezone:'America/Chicago', events: [] });
@@ -294,10 +282,8 @@ function wire() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  try {
-    wire();
-    renderAll();
-  } catch (e) {
+  try { wire(); renderAll(); }
+  catch (e) {
     console.error('Init error:', e);
     document.body.insertAdjacentHTML('afterbegin', `<div style="opacity:.7;padding:8px">Error initializing app.</div>`);
   }
