@@ -4,7 +4,6 @@
   { "ticker": "LOW",  "date": "2025-08-20", "time": "am" },
   { "ticker": "WMT",  "date": "2025-08-21", "time": "am" },
   { "ticker": "NVDA", "date": "2025-08-27", "time": "pm" },
-
   { "ticker": "AAPL", "date": "2025-07-31", "time": "pm" },
   { "ticker": "MSFT", "date": "2025-07-30", "time": "pm" },
   { "ticker": "AMZN", "date": "2025-07-24", "time": "pm" },
@@ -24,5 +23,11 @@
   { "ticker": "HOOD", "date": "2025-07-30", "time": "pm" },
   { "ticker": "COIN", "date": "2025-07-31", "time": "pm" },
   { "ticker": "COST", "date": "2025-05-29", "time": "pm" },
-  { "ticker": "DLTR", "date": "2025-09-10", "time": "am" }
+  { "ticker": "DLTR", "date": "2025-09-10", "time": "am" },
+  { "ticker": "INTC", "date": "2025-08-01", "time": "pm" },
+  { "ticker": "INTC", "date": "2025-10-23", "time": "pm" },
+  { "ticker": "AMAT", "date": "2025-08-14", "time": "pm" },
+  { "ticker": "AMAT", "date": "2025-11-13", "time": "pm" },
+  { "ticker": "MU", "date": "2025-09-24", "time": "pm" }, 
+  { "ticker": "MU", "date": "2025-12-25", "time": "pm" } 
 ]
