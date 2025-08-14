@@ -227,18 +227,32 @@ function buildSpecials() {
 }
 
 // ===== Week filtering (REPLACED with calendar-week logic) =====
-function inWeekRange(isoDate /* legacy args ignored */, _baseRange, _nextRange, showNextWeek) {
+function inWeekRange(isoDate, baseRange, nextRange, showNextWeek) {
   const d = parseISO(isoDate);
   if (isNaN(d)) return false;
+  const off = diffDays(today(), d);
 
-  const cur = currentWeekRange();
-  const nxt = nextWeekRange();
+  // 🚫 Remove past events
+  if (off < 0) return false;
 
-  const inCur = dateInRange(d, cur.start, cur.end);
-  const inNxt = showNextWeek && dateInRange(d, nxt.start, nxt.end);
+  // Monday–Friday logic
+  const dayOfWeek = d.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+  const startOfThisWeek = new Date(today());
+  startOfThisWeek.setDate(startOfThisWeek.getDate() - (startOfThisWeek.getDay() || 7) + 1); // Monday
+  const endOfThisWeek = new Date(startOfThisWeek);
+  endOfThisWeek.setDate(startOfThisWeek.getDate() + 4); // Friday
 
-  return inCur || inNxt;
+  const startOfNextWeek = new Date(startOfThisWeek);
+  startOfNextWeek.setDate(startOfThisWeek.getDate() + 7);
+  const endOfNextWeek = new Date(startOfNextWeek);
+  endOfNextWeek.setDate(startOfNextWeek.getDate() + 4);
+
+  if (d >= startOfThisWeek && d <= endOfThisWeek) return true; // current week Mon–Fri
+  if (showNextWeek && d >= startOfNextWeek && d <= endOfNextWeek) return true; // next week Mon–Fri
+
+  return false;
 }
+
 
 // ===== Economic Events =====
 function buildEcon(econ) {
