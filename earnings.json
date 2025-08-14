@@ -1,25 +1,28 @@
-{
-  "AAPL": [
-    { "date": "2025-02-01", "type": "Earnings" },
-    { "date": "2025-07-31", "type": "Sales Report" }
-  ],
-  "MSFT": [
-    { "date": "2025-02-02", "type": "Earnings" }
-  ],
-  "AMZN": [
-    { "date": "2025-02-05", "type": "Earnings" }
-  ],
-  "TSLA": [
-    { "date": "2025-01-30", "type": "Earnings" },
-    { "date": "2025-07-25", "type": "Sales Report" }
-  ],
-  "NVDA": [
-    { "date": "2025-02-12", "type": "Earnings" }
-  ],
-  "META": [
-    { "date": "2025-02-03", "type": "Earnings" }
-  ],
-  "GOOG": [
-    { "date": "2025-02-04", "type": "Earnings" }
-  ]
-}
+[
+  { "ticker": "CSCO", "date": "2025-08-13", "time": "pm" },
+  { "ticker": "TGT",  "date": "2025-08-20", "time": "am" },
+  { "ticker": "LOW",  "date": "2025-08-20", "time": "am" },
+  { "ticker": "WMT",  "date": "2025-08-21", "time": "am" },
+  { "ticker": "NVDA", "date": "2025-08-27", "time": "pm" },
+
+  { "ticker": "AAPL", "date": "2025-07-31", "time": "pm" },
+  { "ticker": "MSFT", "date": "2025-07-30", "time": "pm" },
+  { "ticker": "AMZN", "date": "2025-07-24", "time": "pm" },
+  { "ticker": "META", "date": "2025-07-30", "time": "pm" },
+  { "ticker": "NFLX", "date": "2025-07-18", "time": "pm" },
+  { "ticker": "GOOG", "date": "2025-07-25", "time": "pm" },
+  { "ticker": "ADBE", "date": "2025-09-19", "time": "pm" },
+  { "ticker": "JPM",  "date": "2025-10-15", "time": "am" },
+  { "ticker": "COF",  "date": "2025-10-23", "time": "am" },
+  { "ticker": "PLTR", "date": "2025-08-04", "time": "am" },
+  { "ticker": "AMD",  "date": "2025-08-05", "time": "pm" },
+  { "ticker": "AVGO", "date": "2025-06-05", "time": "pm" },
+  { "ticker": "SMCI", "date": "2025-08-05", "time": "pm" },
+  { "ticker": "TSLA", "date": "2025-07-23", "time": "pm" },
+  { "ticker": "TSM",  "date": "2025-07-17", "time": "pm" },
+  { "ticker": "ARM",  "date": "2025-07-30", "time": "pm" },
+  { "ticker": "HOOD", "date": "2025-07-30", "time": "pm" },
+  { "ticker": "COIN", "date": "2025-07-31", "time": "pm" },
+  { "ticker": "COST", "date": "2025-05-29", "time": "pm" },
+  { "ticker": "DLTR", "date": "2025-09-10", "time": "am" }
+]
