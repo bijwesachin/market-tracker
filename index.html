@@ -10,13 +10,49 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="apple-touch-icon" href="icon.png">
 
-  <!-- Main Styles -->
+  <!-- Your main theme -->
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Inline enhancements: gradient borders, toggle switches, hide legacy links, legend pills -->
+  <style>
+    .widget{position:relative;border-radius:14px;overflow:hidden}
+    .widget::before{
+      content:"";position:absolute;inset:0;padding:1px;border-radius:inherit;
+      background:linear-gradient(135deg, rgba(255,140,0,.7), rgba(120,180,255,.35));
+      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+      -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none
+    }
+    .widget-header{display:flex;align-items:center;gap:12px;justify-content:flex-start;flex-wrap:wrap}
+    .widget-header .controls{display:inline-flex;align-items:center;gap:12px;margin-left:auto}
+    /* Toggle switch visuals */
+    .toggle {display:inline-flex;align-items:center;gap:10px;font-size:.95rem;color:#e6e6e6}
+    .switch {position:relative;display:inline-block;width:46px;height:26px}
+    .switch input{appearance:none;-webkit-appearance:none;width:0;height:0;opacity:0;position:absolute}
+    .slider{position:absolute;inset:0;cursor:pointer;background:#2a2f3a;border:1px solid #374151;border-radius:999px;transition:background .2s,border-color .2s}
+    .slider::before{content:"";position:absolute;height:20px;width:20px;left:3px;top:2.5px;background:#f2f3f5;border-radius:50%;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+    .switch input:checked + .slider{background:#3b82f6;border-color:#3b82f6}
+    .switch input:checked + .slider::before{transform:translateX(20px)}
+    .switch-label{opacity:.95}
+    /* Hide "Details" anchors if any exist in old templates */
+    .event-link{display:none !important}
+
+    /* Legend pills (match highlight colors) */
+    .legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:4px 10px;border-radius:999px;font-size:.8rem;font-weight:600;
+      border:1px solid rgba(0,0,0,.08)
+    }
+    .pill.today{background:#d7ffd9;color:#0c3a11;border-color:#b7e5bb}
+    .pill.tomorrow{background:#ffe9cc;color:#4a2b00;border-color:#ffd2a1}
+    .pill .dot{width:8px;height:8px;border-radius:50%}
+    .pill.today .dot{background:#0c3a11}
+    .pill.tomorrow .dot{background:#4a2b00}
+  </style>
 </head>
 <body>
-  <!-- Sticky + Shrinking Header -->
-  <header class="app-header" id="mainHeader" aria-label="Sticky header">
-    <h1>Sachin’s Market Pulse</h1>
+  <header class="app-header" style="display:flex;align-items:center;gap:16px;justify-content:space-between;flex-wrap:wrap">
+    <h1 style="margin:0">Sachin’s Market Pulse</h1>
     <div class="legend" aria-label="Legend">
       <span class="pill today"><span class="dot" aria-hidden="true"></span>Today</span>
       <span class="pill tomorrow"><span class="dot" aria-hidden="true"></span>Tomorrow</span>
@@ -45,6 +81,7 @@
     <section class="widget" aria-label="Monthly OPEX & VIX Settlement">
       <div class="widget-header">
         <h2>Monthly OPEX & VIX Settlement</h2>
+        <div class="controls"></div>
       </div>
       <ul id="specials" class="event-list"></ul>
     </section>
@@ -67,7 +104,7 @@
     </section>
   </main>
 
-  <!-- Templates for JS -->
+  <!-- Templates the JS clones -->
   <template id="eventItemTemplate">
     <li class="event">
       <div class="event-date"></div>
@@ -83,15 +120,6 @@
       <ul class="event-list"></ul>
     </section>
   </template>
-
-  <!-- Header shrink-on-scroll -->
-  <script>
-    addEventListener("scroll", () => {
-      const header = document.getElementById("mainHeader");
-      if (scrollY > 20) header.classList.add("shrink");
-      else header.classList.remove("shrink");
-    });
-  </script>
 
   <script src="script.js"></script>
 </body>
