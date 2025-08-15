@@ -50,7 +50,15 @@ h1,h2,h3{margin:0}
   color:#7a0b0b;               /* deep red text */
   border-color:#ffb3b3;        /* soft red border */
 }
-
+.event-type.alert::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #d60000; /* solid red dot */
+}
 .event-link{font-size:.85rem; color:#ffb76b; text-decoration:none}
 .event-link:hover{text-decoration:underline}
 
