@@ -2,8 +2,6 @@
   --bg:#0f1115; --card:#181a20; --muted:#9aa0a6; --text:#f2f3f5;
   --accent:#ff8c00; --today:#d7ffd9; --tomorrow:#ffe9cc; --past:#667085;
   --pill:#232834; --border:#2a2f3a;
-
-  /* iOS standalone offset if needed later */
   --header-h: 64px;
 }
 *{box-sizing:border-box}
@@ -16,12 +14,14 @@ h1,h2,h3{margin:0}
   background: var(--bg);
 }
 
-/* small helper row for header pills */
+.note{color:var(--muted)}
+
+/* Legend pills row */
 .legend-row{
   display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;
 }
 
-/* new pill styles (red pill + base pill) */
+/* Base pill + variants */
 .pill{
   display:inline-block;
   font-size:.8rem;
@@ -32,13 +32,21 @@ h1,h2,h3{margin:0}
   background:var(--pill);
   color:#d7dee6;
 }
+.pill-today{
+  background:var(--today);
+  color:#0c3a11;
+  border-color:#b7e5bb;
+}
+.pill-tomorrow{
+  background:var(--tomorrow);
+  color:#4a2b00;
+  border-color:#ffd2a1;
+}
 .pill-red{
   background:#ff4d4f;
   color:#fff;
   border-color:#cc0000;
 }
-
-.note{color:var(--muted)}
 
 .grid{
   display:grid; gap:16px; padding:16px;
