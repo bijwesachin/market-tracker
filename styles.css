@@ -3,80 +3,66 @@
   --accent:#ff8c00; --today:#d7ffd9; --tomorrow:#ffe9cc; --past:#667085;
   --pill:#232834; --border:#2a2f3a;
 
-  /* Used to offset content in iOS standalone when header is fixed */
-  --header-h: 64px; /* tweak to match your header height if needed */
+  /* iOS standalone offset if needed later */
+  --header-h: 64px;
 }
-
 *{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-}
-
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
 h1,h2,h3{margin:0}
 
-/* ===== Header (baseline + sticky; safe-area aware) ===== */
 .app-header{
   padding:16px 16px 8px;
   border-bottom:1px solid var(--border);
-  position: sticky;          /* normal Safari/desktop */
-  top: 0;
-  z-index: 10000;
   background: var(--bg);
-  /* respect iPhone status bar when not in standalone too */
-  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
+/* small helper row for header pills */
+.legend-row{
+  display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;
+}
+
+/* new pill styles (red pill + base pill) */
+.pill{
+  display:inline-block;
+  font-size:.8rem;
+  font-weight:600;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--pill);
+  color:#d7dee6;
+}
+.pill-red{
+  background:#ff4d4f;
+  color:#fff;
+  border-color:#cc0000;
 }
 
 .note{color:var(--muted)}
 
-/* Add a touch of space below the sticky header for the first widget */
-.grid > .widget:first-of-type{ margin-top:8px; }
-
-/* ===== Layout ===== */
 .grid{
   display:grid; gap:16px; padding:16px;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  position: relative; z-index: 0; /* keep content below header’s stacking ctx */
 }
 
 .widget{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px;
+  background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px;
   box-shadow: 0 1px 0 rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.18);
-  position: relative;
 }
-
 .widget-header{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  margin-bottom:10px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;
 }
-
 .toggle{display:flex; align-items:center; gap:6px; color:#e6e6e6; font-size:.95rem}
 
-.board{
-  display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr))
-}
-
-.ticker{
-  background:#141821; border:1px solid var(--border);
-  border-radius:12px; padding:10px
-}
-
+.board{display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.ticker{background:#141821; border:1px solid var(--border); border-radius:12px; padding:10px}
 .ticker-title{margin:0 0 8px; font-size:1.05rem}
 
-/* ===== Events ===== */
-.event-list{
-  list-style:none; margin:0; padding:0;
-  display:flex; flex-direction:column; gap:8px
-}
+.event-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px}
 .event{
   display:flex; gap:10px; padding:10px; border-radius:10px;
   border:1px solid var(--border); background:#131621;
+  align-items:flex-start;
 }
 .event.past{color:var(--past)}
 .event.today{background:var(--today); color:#0c3a11; border-color:#b7e5bb}
@@ -86,32 +72,12 @@ h1,h2,h3{margin:0}
 .event-type{
   display:inline-block; width:max-content; font-size:.8rem; padding:2px 8px;
   border-radius:999px; background:var(--pill); border:1px solid var(--border); color:#d7dee6;
+  margin-top:2px;
 }
 .event-link{font-size:.85rem; color:#ffb76b; text-decoration:none}
 .event-link:hover{text-decoration:underline}
 
-/* ===== Mobile stacking/elastic scroll niceties ===== */
 @media (max-width:480px){
   .event{flex-direction:column}
   .event-date{min-width:auto}
 }
-
-/* ===== iOS Home Screen (standalone) fix =====
-   In standalone mode, sticky can render under the status bar/notch.
-   Switch to fixed header and pad the page so content never overlaps.
-*/
-@media (display-mode: standalone){
-  .app-header{
-    position: fixed;      /* take the top slot firmly */
-    top: 0; left: 0; right: 0;
-  }
-  body{
-    /* push content below header and status bar safe area */
-    padding-top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
-  }
-  /* remove extra margin we add for sticky mode */
-  .grid > .widget:first-of-type{ margin-top:0; }
-}
-
-/* Optional: tame iOS rubber-banding overlap feel */
-html, body{ overscroll-behavior-y: contain; }
