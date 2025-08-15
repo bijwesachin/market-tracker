@@ -2,27 +2,127 @@
   --bg:#0f1115; --card:#181a20; --muted:#9aa0a6; --text:#f2f3f5;
   --accent:#ff8c00; --today:#d7ffd9; --tomorrow:#ffe9cc; --past:#667085;
   --pill:#232834; --border:#2a2f3a;
+
+  /* Used to offset content in iOS standalone when header is fixed */
+  --header-h: 64px; /* tweak if your header height changes */
 }
+
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+}
+
 h1,h2,h3{margin:0}
-.app-header{padding:16px 16px 8px;border-bottom:1px solid var(--border)}
+
+/* ===== Sticky header (browser) + safe-area aware ===== */
+.app-header{
+  padding:16px 16px 8px;
+  border-bottom:1px solid var(--border);
+  background: var(--bg);
+
+  position: sticky;       /* stick in normal browser/Safari */
+  top: 0;
+  z-index: 10000;
+
+  /* status bar / notch padding even in Safari */
+  padding-top: calc(16px + env(safe-area-inset-top, 0px));
+}
+
 .note{color:var(--muted)}
 
+/* legend pills row under the header title */
+.legend-row{
+  display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap;
+}
+
+/* ===== Pills ===== */
+.pill{
+  display:inline-block;
+  font-size:.8rem;
+  font-weight:600;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--pill);
+  color:#d7dee6;
+}
+.pill-today{
+  background:var(--today);
+  color:#0c3a11;
+  border-color:#b7e5bb;
+}
+.pill-tomorrow{
+  background:var(--tomorrow);
+  color:#4a2b00;
+  border-color:#ffd2a1;
+}
+.pill-red{
+  background:#ff4d4f;
+  color:#fff;
+  border-color:#cc0000;
+}
+
+/* ===== Layout ===== */
 .grid{
   display:grid; gap:16px; padding:16px;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  position: relative; z-index: 0; /* keep content below header */
 }
 
+/* small space under sticky header for first card */
+.grid > .widget:first-of-type{ margin-top:8px; }
+
 .widget{
-  background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
   box-shadow: 0 1px 0 rgba(0,0,0,.2), 0 8px 24px rgba(0,0,0,.18);
+  position: relative;
 }
+
 .widget-header{
   display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;
 }
-.toggle{display:flex; align-items:center; gap:6px; color:#e6e6e6; font-size:.95rem}
 
+/* Toggle area */
+.toggle{display:flex; align-items:center; gap:10px; color:#e6e6e6; font-size:.95rem}
+
+/* (Optional) pretty switch visuals — safe if you keep simple checkboxes too */
+.switch{
+  display:inline-flex; align-items:center; gap:8px;
+  cursor:pointer; user-select:none;
+}
+.switch input{
+  appearance:none; -webkit-appearance:none;
+  width:0; height:0; opacity:0; position:absolute;
+}
+.slider{
+  position:relative;
+  width:46px; height:26px; border-radius:999px;
+  background:#2a2f3a; border:1px solid #374151;
+  display:inline-block; transition: background .2s, border-color .2s;
+}
+.slider::before{
+  content:"";
+  position:absolute; left:3px; top:3px;
+  width:20px; height:20px; border-radius:50%;
+  background:#f2f3f5; box-shadow:0 1px 2px rgba(0,0,0,.35);
+  transition: transform .2s;
+}
+.switch input:checked + .slider{
+  background:#3b82f6; border-color:#3b82f6;
+}
+.switch input:checked + .slider::before{
+  transform: translateX(20px);
+}
+.switch-label{ font-size:.92rem; color:#e6e6e6; }
+
+/* ===== Boards & Events ===== */
 .board{display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
 .ticker{background:#141821; border:1px solid var(--border); border-radius:12px; padding:10px}
 .ticker-title{margin:0 0 8px; font-size:1.05rem}
@@ -31,6 +131,7 @@ h1,h2,h3{margin:0}
 .event{
   display:flex; gap:10px; padding:10px; border-radius:10px;
   border:1px solid var(--border); background:#131621;
+  align-items:flex-start;
 }
 .event.past{color:var(--past)}
 .event.today{background:var(--today); color:#0c3a11; border-color:#b7e5bb}
@@ -42,23 +143,25 @@ h1,h2,h3{margin:0}
 .event-type{
   display:inline-block; width:max-content; font-size:.8rem; padding:2px 8px;
   border-radius:999px; background:var(--pill); border:1px solid var(--border); color:#d7dee6;
+  margin-top:2px;
 }
 
-/* NEW: light-red alert style for FOMC/Fed & OPEX */
+/* Light-red alert pill for FOMC/Fed & OPEX */
 .event-type.alert{
   background:#ffe5e5;          /* light red background */
   color:#7a0b0b;               /* deep red text */
   border-color:#ffb3b3;        /* soft red border */
 }
-.event-type.alert::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 6px;
-  border-radius: 50%;
-  background: #d60000; /* solid red dot */
+/* Tiny red dot before alert text */
+.event-type.alert::before{
+  content:"";
+  display:inline-block;
+  width:6px; height:6px;
+  margin-right:6px;
+  border-radius:50%;
+  background:#d60000;
 }
+
 .event-link{font-size:.85rem; color:#ffb76b; text-decoration:none}
 .event-link:hover{text-decoration:underline}
 
@@ -66,3 +169,20 @@ h1,h2,h3{margin:0}
   .event{flex-direction:column}
   .event-date{min-width:auto}
 }
+
+/* ===== iPhone Home-Screen (standalone) fix =====
+   In standalone mode, sticky can render under the status bar.
+   Switch to fixed header and pad the page so content never overlaps. */
+@media (display-mode: standalone){
+  .app-header{
+    position: fixed;
+    top: 0; left: 0; right: 0;
+  }
+  body{
+    padding-top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+  }
+  .grid > .widget:first-of-type{ margin-top:0; }
+}
+
+/* Reduce iOS rubber-banding overlap feel */
+html, body{ overscroll-behavior-y: contain; }
